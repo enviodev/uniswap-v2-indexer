@@ -15,6 +15,8 @@ export function safeDiv(amount0: BigDecimal, amount1: BigDecimal): BigDecimal {
   }
 }
 
+//----
+
 /**
  * Get ETH price in USD using stable token pairs
  * Keeps the original logic for reliable pricing
