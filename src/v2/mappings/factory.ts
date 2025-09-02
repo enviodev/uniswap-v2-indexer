@@ -5,14 +5,14 @@ import {
   Factory,  // Contract handler for Factory events
   Pair,    // Contract handler for Pair events
   Token,   // Contract handler for Token events
-  UniswapFactory,  // Contract handler for UniswapFactory events
+  OctoswapFactory,  // Contract handler for OctoswapFactory events
   Bundle,  // Contract handler for Bundle events
   PairTokenLookup,  // Contract handler for PairTokenLookup events
 } from "generated";
 import {
   Pair_t,
   Token_t,
-  UniswapFactory_t,
+  OctoswapFactory_t,
   Bundle_t,
   PairTokenLookup_t,
 } from "generated/src/db/Entities.gen";
@@ -30,9 +30,9 @@ Factory.PairCreated.contractRegister(({ event, context }) => {
 // Reference: original-subgraph/src/v2/mappings/core.ts - handleNewPair
 Factory.PairCreated.handler(async ({ event, context }) => {
   try {
-    // 1. Load/Create UniswapFactory entity (id: factoryAddress)
+    // 1. Load/Create OctoswapFactory entity (id: factoryAddress)
     const factoryAddress = getFactoryAddress(event.chainId);
-    let factory = await context.UniswapFactory.get(`${event.chainId}-${factoryAddress}`);
+    let factory = await context.OctoswapFactory.get(`${event.chainId}-${factoryAddress}`);
     if (!factory) {
       factory = {
         id: `${event.chainId}-${factoryAddress}`,
@@ -47,11 +47,11 @@ Factory.PairCreated.handler(async ({ event, context }) => {
     }
 
     // Update factory pair count
-    const updatedFactory: UniswapFactory_t = {
+    const updatedFactory: OctoswapFactory_t = {
       ...factory,
       pairCount: factory.pairCount + 1,
     };
-    context.UniswapFactory.set(updatedFactory);
+    context.OctoswapFactory.set(updatedFactory);
 
     // 2. Load/Create Bundle entity (id: '1')
     const chainId = event.chainId;

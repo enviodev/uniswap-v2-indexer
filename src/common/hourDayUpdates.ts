@@ -6,8 +6,8 @@ import { BigDecimal } from "generated";
 import { ZERO_BD, ZERO_BI, ONE_BI } from "./constants";
 import { getFactoryAddress } from "./chainConfig";
 import {
-  UniswapFactory_t,
-  UniswapDayData_t,
+  OctoswapFactory_t,
+  OctoswapDayData_t,
   PairDayData_t,
   PairHourData_t,
   TokenDayData_t,
@@ -15,21 +15,21 @@ import {
   Bundle_t,
 } from "generated/src/db/Entities.gen";
 
-export async function updateUniswapDayData(
+export async function updateOctoswapDayData(
   event: any,
   context: any,
   chainId: string
-): Promise<UniswapDayData_t> {
+): Promise<OctoswapDayData_t> {
       const factoryAddress = getFactoryAddress(Number(chainId));
-    const uniswap = await context.UniswapFactory.get(`${chainId}-${factoryAddress}`);
+    const uniswap = await context.OctoswapFactory.get(`${chainId}-${factoryAddress}`);
   if (!uniswap) {
-    throw new Error('Factory not found for updateUniswapDayData');
+    throw new Error('Factory not found for updateOctoswapDayData');
   }
 
   const timestamp = Number(event.block.timestamp);
   const dayID = Math.floor(timestamp / 86400);
   const dayStartTimestamp = dayID * 86400;
-  let uniswapDayData = await context.UniswapDayData.get(`${chainId}-${dayID}`);
+  let uniswapDayData = await context.OctoswapDayData.get(`${chainId}-${dayID}`);
 
   if (!uniswapDayData) {
     uniswapDayData = {
@@ -49,7 +49,7 @@ export async function updateUniswapDayData(
   uniswapDayData.totalLiquidityUSD = uniswap.totalLiquidityUSD;
   uniswapDayData.totalLiquidityETH = uniswap.totalLiquidityETH;
   uniswapDayData.txCount = uniswap.txCount;
-  context.UniswapDayData.set(uniswapDayData);
+  context.OctoswapDayData.set(uniswapDayData);
 
   return uniswapDayData;
 }

@@ -11,12 +11,12 @@ import {
   Transaction_t,
   Token_t,
   Pair_t,
-  UniswapFactory_t,
+  OctoswapFactory_t,
   Bundle_t,
   PairDayData_t,
   TokenDayData_t,
   PairHourData_t,
-  UniswapDayData_t,
+  OctoswapDayData_t,
   User_t,
 } from "generated/src/db/Entities.gen";
 import { ADDRESS_ZERO, ZERO_BD, ZERO_BI, ONE_BI, BI_18, ALMOST_ZERO_BD } from "../../common/constants";
@@ -24,7 +24,7 @@ import { getFactoryAddress } from "../../common/chainConfig";
 import { BigDecimal } from "generated";
 import { convertTokenToDecimal, createUser } from "../../common/helpers";
 import { getTrackedVolumeUSD, getEthPriceInUSD, findEthPerToken, getTrackedLiquidityUSD } from "../../common/pricing";
-import { updatePairDayData, updatePairHourData, updateUniswapDayData, updateTokenDayData } from "../../common/hourDayUpdates";
+import { updatePairDayData, updatePairHourData, updateOctoswapDayData, updateTokenDayData } from "../../common/hourDayUpdates";
 
 // Helper function to check if a mint is complete (matches subgraph logic)
 function isCompleteMint(mint: Mint_t): boolean {
@@ -43,7 +43,7 @@ Pair.Transfer.handler(async ({ event, context }) => {
     }
 
     const factoryAddress = getFactoryAddress(chainId);
-    const factory = await context.UniswapFactory.get(`${chainId}-${factoryAddress}`);
+    const factory = await context.OctoswapFactory.get(`${chainId}-${factoryAddress}`);
     if (!factory) {
       return;
     }
@@ -264,14 +264,14 @@ Pair.Mint.handler(async ({ event, context }) => {
       return;
     }
 
-    // 3. Load Pair and UniswapFactory entities
+    // 3. Load Pair and OctoswapFactory entities
     const pair = await context.Pair.get(`${chainId}-${event.srcAddress}`);
     if (!pair) {
       return;
     }
 
     const factoryAddress = getFactoryAddress(chainId);
-    const factory = await context.UniswapFactory.get(`${chainId}-${factoryAddress}`);
+    const factory = await context.OctoswapFactory.get(`${chainId}-${factoryAddress}`);
     if (!factory) {
       return;
     }
@@ -309,7 +309,7 @@ Pair.Mint.handler(async ({ event, context }) => {
     };
 
     // 8. Update factory tx count
-    const updatedFactory: UniswapFactory_t = { 
+    const updatedFactory: OctoswapFactory_t = { 
       ...factory, 
       txCount: factory.txCount + ONE_BI 
     };
@@ -340,14 +340,14 @@ Pair.Mint.handler(async ({ event, context }) => {
     context.Token.set(updatedToken0);
     context.Token.set(updatedToken1);
     context.Pair.set(updatedPair);
-    context.UniswapFactory.set(updatedFactory);
+    context.OctoswapFactory.set(updatedFactory);
     context.Mint.set(updatedMint);
 
     // 12. Update daily/hourly data
     if (!context.isPreload) {
       await updatePairDayData(updatedPair, event, context, String(chainId));
       await updatePairHourData(updatedPair, event, context, String(chainId));
-      await updateUniswapDayData(event, context, String(chainId));
+      await updateOctoswapDayData(event, context, String(chainId));
       await updateTokenDayData(updatedToken0, event, context, String(chainId));
       await updateTokenDayData(updatedToken1, event, context, String(chainId));
     }
@@ -382,14 +382,14 @@ Pair.Burn.handler(async ({ event, context }) => {
       return;
     }
 
-    // 3. Load Pair and UniswapFactory entities
+    // 3. Load Pair and OctoswapFactory entities
     const pair = await context.Pair.get(`${chainId}-${event.srcAddress}`);
     if (!pair) {
       return;
     }
 
     const factoryAddress = getFactoryAddress(chainId);
-    const factory = await context.UniswapFactory.get(`${chainId}-${factoryAddress}`);
+    const factory = await context.OctoswapFactory.get(`${chainId}-${factoryAddress}`);
     if (!factory) {
       return;
     }
@@ -427,7 +427,7 @@ Pair.Burn.handler(async ({ event, context }) => {
     };
 
     // 8. Update factory tx count
-    const updatedFactory: UniswapFactory_t = { 
+    const updatedFactory: OctoswapFactory_t = { 
       ...factory, 
       txCount: factory.txCount + ONE_BI 
     };
@@ -457,14 +457,14 @@ Pair.Burn.handler(async ({ event, context }) => {
     context.Token.set(updatedToken0);
     context.Token.set(updatedToken1);
     context.Pair.set(updatedPair);
-    context.UniswapFactory.set(updatedFactory);
+    context.OctoswapFactory.set(updatedFactory);
     context.Burn.set(updatedBurn);
 
     // 12. Update daily/hourly data
     if (!context.isPreload) {
       await updatePairDayData(updatedPair, event, context, String(chainId));
       await updatePairHourData(updatedPair, event, context, String(chainId));
-      await updateUniswapDayData(event, context, String(chainId));
+      await updateOctoswapDayData(event, context, String(chainId));
       await updateTokenDayData(updatedToken0, event, context, String(chainId));
       await updateTokenDayData(updatedToken1, event, context, String(chainId));
     }
@@ -478,7 +478,7 @@ Pair.Burn.handler(async ({ event, context }) => {
 // Reference: original-subgraph/src/v2/mappings/core.ts - handleSwap
 Pair.Swap.handler(async ({ event, context }) => {
   try {
-    // 1. Load Pair and UniswapFactory entities
+    // 1. Load Pair and OctoswapFactory entities
     const chainId = event.chainId;
     let pair = await context.Pair.get(`${chainId}-${event.srcAddress}`);
     if (!pair) {
@@ -486,7 +486,7 @@ Pair.Swap.handler(async ({ event, context }) => {
     }
 
     const factoryAddress = getFactoryAddress(chainId);
-    const factory = await context.UniswapFactory.get(`${chainId}-${factoryAddress}`);
+    const factory = await context.OctoswapFactory.get(`${chainId}-${factoryAddress}`);
     if (!factory) {
       return;
     }
@@ -584,7 +584,7 @@ Pair.Swap.handler(async ({ event, context }) => {
       };
 
       // Update factory with all volume data
-      const updatedFactory: UniswapFactory_t = {
+      const updatedFactory: OctoswapFactory_t = {
         ...factory,
         totalVolumeUSD: factory.totalVolumeUSD.plus(trackedAmountUSD),
         totalVolumeETH: factory.totalVolumeETH.plus(trackedAmountETH),
@@ -593,7 +593,7 @@ Pair.Swap.handler(async ({ event, context }) => {
       };
 
       // Save factory
-      context.UniswapFactory.set(updatedFactory);
+      context.OctoswapFactory.set(updatedFactory);
 
       // Save updated tokens
       context.Token.set(finalToken0);
@@ -655,13 +655,13 @@ Pair.Swap.handler(async ({ event, context }) => {
     if (bundle) {
       const pairDayData = await updatePairDayData(pair, event, context, String(chainId));
       const pairHourData = await updatePairHourData(pair, event, context, String(chainId));
-      const uniswapDayData = await updateUniswapDayData(event, context, String(chainId));
+      const uniswapDayData = await updateOctoswapDayData(event, context, String(chainId));
       const token0DayData = await updateTokenDayData(finalToken0 || updatedToken0, event, context, String(chainId));
       const token1DayData = await updateTokenDayData(finalToken1 || updatedToken1, event, context, String(chainId));
 
-      // Swap-specific updating for UniswapDayData
+      // Swap-specific updating for OctoswapDayData
       if (uniswapDayData) {
-        const updatedUniswapDayData = {
+        const updatedOctoswapDayData = {
           ...uniswapDayData,
           dailyVolumeUSD: uniswapDayData.dailyVolumeUSD.plus(trackedAmountUSD),
           dailyVolumeETH: uniswapDayData.dailyVolumeETH.plus(trackedAmountETH),
@@ -670,7 +670,7 @@ Pair.Swap.handler(async ({ event, context }) => {
           totalVolumeUSD: uniswapDayData.totalVolumeUSD.plus(trackedAmountUSD),
           totalVolumeETH: uniswapDayData.totalVolumeETH.plus(trackedAmountETH),
         };
-        context.UniswapDayData.set(updatedUniswapDayData);
+        context.OctoswapDayData.set(updatedOctoswapDayData);
       }
 
       // Swap-specific updating for PairDayData
@@ -731,7 +731,7 @@ Pair.Swap.handler(async ({ event, context }) => {
 // Reference: original-subgraph/src/v2/mappings/core.ts - handleSync
 Pair.Sync.handler(async ({ event, context }) => {
   try {
-    // 1. Load Pair and UniswapFactory entities
+    // 1. Load Pair and OctoswapFactory entities
     const chainId = event.chainId;
     const pairId = `${chainId}-${event.srcAddress}`;
     
@@ -752,13 +752,13 @@ Pair.Sync.handler(async ({ event, context }) => {
 
     const factoryAddress = getFactoryAddress(chainId);
     const factoryId = `${chainId}-${factoryAddress}`;
-    const factory = await context.UniswapFactory.get(factoryId);
+    const factory = await context.OctoswapFactory.get(factoryId);
     if (!factory) {
       return;
     }
 
     // 2. Reset factory liquidity by subtracting only tracked liquidity
-    const updatedFactory: UniswapFactory_t = {
+    const updatedFactory: OctoswapFactory_t = {
       ...factory,
       totalLiquidityETH: factory.totalLiquidityETH.minus(pair.trackedReserveETH || ZERO_BD),
     };
@@ -848,7 +848,7 @@ Pair.Sync.handler(async ({ event, context }) => {
       };
 
       // 13. Update factory with new liquidity totals (matches subgraph exactly)
-      const finalFactory: UniswapFactory_t = {
+      const finalFactory: OctoswapFactory_t = {
         ...updatedFactory,
         totalLiquidityETH: updatedFactory.totalLiquidityETH.plus(trackedLiquidityETH),
         totalLiquidityUSD: updatedFactory.totalLiquidityETH.plus(trackedLiquidityETH).times(newEthPrice),
@@ -867,7 +867,7 @@ Pair.Sync.handler(async ({ event, context }) => {
 
       // 15. Save all entities (matches subgraph order exactly)
       context.Pair.set(updatedPair);
-      context.UniswapFactory.set(finalFactory);
+      context.OctoswapFactory.set(finalFactory);
       context.Token.set(finalToken0WithLiquidity);
       context.Token.set(finalToken1WithLiquidity);
     }

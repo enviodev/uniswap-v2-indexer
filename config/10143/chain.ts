@@ -1,15 +1,15 @@
 // Monad Testnet Chain Configuration (Network ID: 10143)
 // Updated with real token addresses from Monad testnet
 
-export const FACTORY_ADDRESS = '0x733e88f248b742db6c14c0b1713af5ad7fdd59d0'
+export const FACTORY_ADDRESS = '0xe26dd94f67Ca3615fcaF6062750147F37Df84F7a'
 
 // WETH is the reference token for pricing calculations
 export const REFERENCE_TOKEN = '0xB5a30b0FDc5EA94A52fDc42e3E9760Cb8449Fb37' // WETH
 
 // Stable token pairs for USD pricing (USDC/WETH)
 export const STABLE_TOKEN_PAIRS = [
-  '0xfe9241e7b94bf0f5f0d8de0851c9421a38b54916', // USDC/WETH pair
-  //'0x132Cb626Be0dD6EB3b53FbeB392838c7A7b93621'
+  '0x31b53a60C87Dd6A4787996CAef388D4eb50F78A0', // USDC/WETH pair
+  '0x8E69c89b81cFB3AA6d366cd5f8d8bE8A938669CE', // USDT/WETH pair
 ]
 
 // token where amounts should contribute to tracked volume and liquidity

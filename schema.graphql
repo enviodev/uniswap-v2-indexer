@@ -1,4 +1,4 @@
-type UniswapFactory {
+type OctoswapFactory {
   # factory address
   id: ID!
 
@@ -189,8 +189,8 @@ type Bundle {
   ethPrice: BigDecimal! # price of ETH usd
 }
 
-# Data accumulated and condensed into day stats for all of Uniswap
-type UniswapDayData {
+# Data accumulated and condensed into day stats for all of Octoswap
+type OctoswapDayData {
   id: ID! # timestamp rounded to current day by dividing by 86400
   date: Int!
 
