@@ -33,7 +33,7 @@
 ## Objective
 
 **IMPORTANT: This is a GENERALIZED migration guide for ANY subgraph to Envio conversion.**
-**All examples use generic names (Contract1, Contract2, Entity, etc.) and should be adapted to your specific subgraph.**
+**Most examples use generic names (Contract1, Contract2, Entity, etc.) and should be adapted to your specific subgraph.**
 
 Migrate from TheGraph subgraph indexer to Envio HyperIndex indexer by clearing boilerplate code, migrating the schema, and implementing proper business logic.
 
@@ -42,7 +42,6 @@ Migrate from TheGraph subgraph indexer to Envio HyperIndex indexer by clearing b
 Always include:
 
 - Envio documentation: https://docs.envio.dev
-- TheGraph to Envio migration guide: https://docs.envio.dev/docs/migrate-from-thegraph
 - Example indexer (Uniswap v4): https://github.com/enviodev/uniswap-v4-indexer
 - Example indexer (Safe): https://github.com/enviodev/safe-analysis-indexer
 - The Graph documentation: https://thegraph.com/docs/en/indexing/overview/
@@ -106,12 +105,9 @@ TUI_OFF=true pnpm dev
 
 **IMPORTANT: After completing each step, ALWAYS run the Quality Check Checklist (see section 21) before proceeding to the next step. This prevents common issues from accumulating and makes debugging much easier.**
 
+## Main Migration Steps
+
 ### Step 1: Clear Boilerplate Code
-### Step 2: Migrate Schema from Raw Events to Business Logic
-### Step 3: Refactor File Structure to Mirror Subgraph
-### Step 4: Register Dynamic Contracts with Factory Events
-### Step 5: Reference Original Subgraph Logic
-### Step 6: Implement Migration Patterns
 
 When working with EventHandlers.ts, clear all boilerplate logic and start fresh:
 
@@ -134,6 +130,23 @@ Contract.EventName.handler(async ({ event, context }) => {
   // Reference: original-subgraph/src/contract.ts
 });
 ```
+
+**✅ Step 1 Quality Check:**
+
+#### **1.1: Review Migration Patterns and Quality Checks**
+- **Read the "Migration Patterns and Quality Checks" section**
+- **Ensure your code follows all documented patterns** (entity creation, updates, BigDecimal precision, etc.)
+- **Check compliance with Effect API requirements** for external calls
+- **Verify all quality check issues are addressed** (imports, types, precision, etc.)
+
+#### **1.2: Run Technical Validation**
+```bash
+# Run these commands to verify Step 1 completion
+pnpm codegen
+pnpm tsc --noEmit
+TUI_OFF=true pnpm dev
+```
+*Note: Some failures are expected if subsequent steps aren't complete yet - that's okay!*
 
 ### Step 2: Migrate Schema from Raw Events to Business Logic
 
@@ -235,148 +248,26 @@ const mint = await context.Mint.get(mintId); // Query by ID
 - **This is fundamentally different from TheGraph** where arrays are actual properties
 - **You must use indexed field operations** to query related entities in handlers
 
+**✅ Step 2 Quality Check:**
+
+#### **2.1: Review Migration Patterns and Quality Checks**
+- **Read the "Migration Patterns and Quality Checks" section**
+- **Ensure your code follows all documented patterns** (entity creation, updates, BigDecimal precision, etc.)
+- **Check compliance with Effect API requirements** for external calls
+- **Verify all quality check issues are addressed** (imports, types, precision, etc.)
+
+#### **2.2: Run Technical Validation**
+```bash
+# Run these commands to verify Step 2 completion
+pnpm codegen
+pnpm tsc --noEmit
+TUI_OFF=true pnpm dev
+```
+*Note: Some failures are expected if subsequent steps aren't complete yet - that's okay!*
+
 ### Step 3: Refactor File Structure to Mirror Subgraph
 
 **IMPORTANT: This step is ONLY about creating the file structure and skeleton handlers. DO NOT implement business logic yet.**
-
-## Handler Implementation Order
-
-**⚠️ CRITICAL: BEFORE implementing ANY handler, check this MDC file for existing solutions! ⚠️**
-
-**IMPORTANT: Follow this order when implementing handlers to avoid dependency issues:**
-
-### Phase 1: Simple Handlers
-- **Handlers that only set parameter values** with minimal processing
-- **Handlers that load existing entities** and update them with new data
-- **Basic event handlers** with no complex business logic or helper function calls
-
-### Phase 2: Moderate Complexity Handlers
-- **Handlers that call helper functions** but don't create complex entity relationships
-- **Handlers that update multiple entities** but with straightforward logic
-- **Event handlers with some business logic** but clear, simple dependencies
-
-### Phase 3: Complex Handlers
-- **Handlers that call multiple helper functions** or other handlers
-- **Handlers with complex business logic** and multiple entity relationships
-- **Handlers that require extensive data processing** or calculations
-- **Handlers that implement contract binding** (RPC calls to fetch state)
-- **Handlers that depend on multiple other handlers** being complete
-
-## Helper Function Implementation Strategy
-
-**⚠️ CRITICAL: Implement helper functions based on their dependencies, not arbitrary timing! ⚠️**
-
-**🚨 MANDATORY: When implementing helper functions, you MUST implement the COMPLETE logic, not just placeholders! 🚨**
-
-### Implement Helper Functions IMMEDIATELY If:
-- **No dependencies on incomplete entities/handlers**
-- **Only depends on constants, basic math, or already implemented pieces**
-- **Required for the current handler to function properly**
-
-### 🚨 CRITICAL IMPLEMENTATION REQUIREMENT:
-**When implementing helper functions that have no dependencies, you MUST:**
-
-1. **Read the MDC file** for existing implementation patterns and solutions
-2. **Implement the COMPLETE business logic** from the original subgraph
-3. **Use the documented Envio patterns** (RPC calls, entity context, etc.)
-4. **Include all fallback logic** and error handling from the original
-5. **NOT just add TODO comments** or placeholder implementations
-6. **Implement ALL function dependencies** that have no entity/handler dependencies
-
-**❌ WRONG - Just adding TODO comments:**
-```typescript
-export function fetchTokenSymbol(tokenAddress: string): string {
-  // TODO: Implement using Envio's RPC calls to ERC20 contracts
-  return 'UNKNOWN'; // This is NOT acceptable!
-}
-```
-
-**✅ CORRECT - Complete implementation:**
-```typescript
-export function fetchTokenSymbol(tokenAddress: string): string {
-  // Implement complete logic using documented Envio patterns
-  // Include all fallback logic and error handling
-  // Return actual working values, not placeholders
-}
-```
-
-### Examples of Helpers to Implement Now:
-```typescript
-// ✅ IMPLEMENT NOW - No dependencies on incomplete entities/handlers
-- fetchTokenSymbol()     // Only depends on RPC calls to token contracts
-- fetchTokenName()       // Only depends on RPC calls to token contracts  
-- fetchTokenDecimals()   // Only depends on RPC calls to token contracts
-- fetchTokenTotalSupply() // Only depends on RPC calls to token contracts
-- convertEthToDecimal()  // Only depends on constants and BigDecimal math
-- exponentToBigDecimal() // Only depends on constants and BigDecimal math
-- equalToZero()          // Only depends on constants and BigDecimal methods
-- isNullEthValue()       // Only depends on string comparison
-- getStaticDefinition()  // Only depends on static data arrays
-- SKIP_TOTAL_SUPPLY     // Only depends on static string arrays
-```
-
-### Examples of Helpers to Leave for Later:
-```typescript
-// ⏳ LEAVE FOR LATER - Depends on incomplete entities/handlers
-- updatePairDayData()    // Depends on PairDayData entity and day calculation logic
-- updatePairHourData()   // Depends on PairHourData entity and hour calculation logic
-- updateUniswapDayData() // Depends on UniswapDayData entity and global aggregations
-- updateTokenDayData()   // Depends on TokenDayData entity and token aggregations
-- calculateUSDValue()    // Depends on pricing logic and Bundle entity
-```
-
-### Why This Approach:
-1. **Complete, functional handlers** that can be tested immediately
-2. **No unnecessary delays** on helpers that are ready to implement
-3. **Clear separation** between what's ready now vs. what needs other pieces first
-4. **Better testing** since handlers have all their immediate dependencies
-
-### 🚨 COMMON MISTAKE TO AVOID:
-**Do NOT implement helper functions as placeholders with TODO comments when they have no dependencies. This defeats the purpose of the rule and creates incomplete, non-functional code.**
-
-### 🔍 CRITICAL: Check Function Dependencies Thoroughly
-
-**When implementing helper functions, you MUST examine ALL function calls within them:**
-
-1. **Look for function calls** like `getStaticDefinition()`, `isNullEthValue()`, etc.
-2. **Check if these functions have dependencies** on incomplete entities/handlers
-3. **If NO dependencies exist, implement them immediately** - don't skip them!
-4. **Examples of functions that should be implemented:**
-   - `getStaticDefinition()` - Just static data arrays and string comparisons
-   - `isNullEthValue()` - Just string comparison logic
-   - `SKIP_TOTAL_SUPPLY` constants - Just string arrays
-   - Any pure utility functions with no entity dependencies
-
-**❌ WRONG - Missing dependency implementation:**
-```typescript
-export function fetchTokenSymbol(tokenAddress: string): string {
-  // Missing: const staticDefinition = getStaticDefinition(tokenAddress);
-  // Missing: if (staticDefinition !== null) return staticDefinition.symbol;
-  
-  // Only implementing the RPC call part
-  return 'unknown';
-}
-```
-
-**✅ CORRECT - Complete dependency implementation:**
-```typescript
-export function fetchTokenSymbol(tokenAddress: string): string {
-  // ✅ IMPLEMENTED: Static definition check
-  const staticDefinition = getStaticDefinition(tokenAddress);
-  if (staticDefinition !== null) {
-    return staticDefinition.symbol;
-  }
-  
-  // ✅ IMPLEMENTED: RPC call logic
-  // ... rest of implementation
-}
-```
-
-**Why This Order Matters:**
-- Prevents "entity not found" errors during development
-- Ensures required entities exist before complex handlers try to use them
-- Allows incremental testing and validation
-- Reduces circular dependency issues
 
 **CREATE directory structure to match the original subgraph:**
 
@@ -507,6 +398,23 @@ networks:
 - **Never repeat** handler, events, or other contract configuration in network sections
 - **Use `unordered_multichain_mode: true`** for proper multichain support
 
+**✅ Step 3 Quality Check:**
+
+#### **3.1: Review Migration Patterns and Quality Checks**
+- **Read the "Migration Patterns and Quality Checks" section**
+- **Ensure your code follows all documented patterns** (entity creation, updates, BigDecimal precision, etc.)
+- **Check compliance with Effect API requirements** for external calls
+- **Verify all quality check issues are addressed** (imports, types, precision, etc.)
+
+#### **3.2: Run Technical Validation**
+```bash
+# Run these commands to verify Step 3 completion
+pnpm codegen
+pnpm tsc --noEmit
+TUI_OFF=true pnpm dev
+```
+*Note: Some failures are expected if subsequent steps aren't complete yet - that's okay!*
+
 ### Step 4: Register Dynamic Contracts with Factory Events
 
 **CRITICAL: This step is essential for Envio to track dynamically created contracts.**
@@ -602,6 +510,23 @@ PoolFactory.PoolCreated.contractRegister(({ event, context }) => {
 - **MUST reference the correct event parameter** that contains the new contract address
 - **Without this, Envio cannot index the dynamically created contracts**
 
+**✅ Step 4 Quality Check:**
+
+#### **4.1: Review Migration Patterns and Quality Checks**
+- **Read the "Migration Patterns and Quality Checks" section**
+- **Ensure your code follows all documented patterns** (entity creation, updates, BigDecimal precision, etc.)
+- **Check compliance with Effect API requirements** for external calls
+- **Verify all quality check issues are addressed** (imports, types, precision, etc.)
+
+#### **4.2: Run Technical Validation**
+```bash
+# Run these commands to verify Step 4 completion
+pnpm codegen
+pnpm tsc --noEmit
+TUI_OFF=true pnpm dev
+```
+*Note: Some failures are expected if subsequent steps aren't complete yet - that's okay!*
+
 ### Step 5: Reference Original Subgraph Logic
 
 For each handler, examine the corresponding subgraph file:
@@ -610,9 +535,403 @@ For each handler, examine the corresponding subgraph file:
 - `original-subgraph/src/contract2.ts` → Contract2 handlers  
 - `original-subgraph/src/contract3.ts` → Contract3 handlers
 
-### Step 6: Implement Migration Patterns
+## Step 5a: Implement Helper Functions with No Dependencies
 
-#### Entity Creation Pattern
+**🚨 MANDATORY: When implementing helper functions, you MUST implement the COMPLETE logic, not just placeholders! 🚨**
+
+### What Are "Dependencies"?
+**Dependencies** are functions, entities, or handlers that your helper function needs to work properly:
+- **Entity dependencies**: Functions that need to load/update entities (e.g., `context.Entity.get()`)
+- **Handler dependencies**: Functions that depend on other event handlers being complete
+- **Function dependencies**: Functions that call other helper functions
+
+### Implement Helper Functions IMMEDIATELY If:
+- **No dependencies on incomplete entities/handlers**
+- **Only depends on constants, basic math, or already implemented pieces**
+- **Required for the current handler to function properly**
+
+### 🚨 CRITICAL IMPLEMENTATION REQUIREMENT:
+**When implementing helper functions that have no dependencies, you MUST:**
+
+1. **Read the MDC file** for existing implementation patterns and solutions
+2. **Implement the COMPLETE business logic** from the original subgraph
+3. **Use the documented Envio patterns** (RPC calls, entity context, etc.)
+4. **Include all fallback logic** and error handling from the original
+5. **NOT just add TODO comments** or placeholder implementations
+6. **Implement ALL function dependencies** that have no entity/handler dependencies
+
+**❌ WRONG - Just adding TODO comments:**
+```typescript
+export function fetchTokenSymbol(tokenAddress: string): string {
+  // TODO: Implement using Envio's RPC calls to ERC20 contracts
+  return 'UNKNOWN'; // This is NOT acceptable!
+}
+```
+
+**✅ CORRECT - Complete implementation:**
+```typescript
+export function fetchTokenSymbol(tokenAddress: string): string {
+  // Implement complete logic using documented Envio patterns
+  // Include all fallback logic and error handling
+  // Return actual working values, not placeholders
+}
+
+### Example of Helper with No Dependencies:
+```typescript
+// ✅ IMPLEMENT NOW - No dependencies on incomplete entities/handlers
+export function isNullEthValue(value: string): boolean {
+  // Only depends on string comparison - no entity or handler dependencies
+  return value === '0x0000000000000000000000000000000000000000000000000000000000000001' ||
+         value === '0x0000000000000000000000000000000000000000000000000000000000000000';
+}
+
+export function convertEthToDecimal(eth: BigInt): BigDecimal {
+  // Only depends on constants and BigDecimal math - no entity or handler dependencies
+  return eth.divDecimal(BigDecimal.fromString('1000000000000000000'));
+}
+
+export function getStaticDefinition(address: string): StaticDefinition | null {
+  // Only depends on static data arrays - no entity or handler dependencies
+  const staticDefinitions: StaticDefinition[] = [
+    { address: '0x6b175474e89094c44da98b954eedeac495271d0f', symbol: 'DAI', name: 'Dai Stablecoin' },
+    { address: '0xa0b86a33e6441b8c4c8c0e4c0e4c0e4c0e4c0e4c', symbol: 'USDC', name: 'USD Coin' },
+  ];
+  
+  return staticDefinitions.find(def => def.address.toLowerCase() === address.toLowerCase()) || null;
+}
+```
+
+**Why these have no dependencies:**
+- **No `context.Entity.get()` calls** - don't need to load entities
+- **No other helper function calls** - self-contained logic
+- **Only use constants, math, or static data** - no dynamic dependencies
+- **Can be implemented immediately** without waiting for other code
+
+### 🔍 CRITICAL: Check Function Dependencies Thoroughly
+
+**When implementing helper functions, you MUST examine ALL function calls within them:**
+
+1. **Look for function calls** like `getStaticDefinition()`, `isNullEthValue()`, etc.
+2. **Check if these functions have dependencies** on incomplete entities/handlers
+3. **If NO dependencies exist, implement them immediately** - don't skip them!
+
+**❌ WRONG - Missing dependency implementation:**
+```typescript
+export function fetchTokenSymbol(tokenAddress: string): string {
+  // Missing: const staticDefinition = getStaticDefinition(tokenAddress);
+  // Missing: if (staticDefinition !== null) return staticDefinition.symbol;
+  
+  // Only implementing the RPC call part
+  return 'unknown';
+}
+```
+
+**✅ CORRECT - Complete dependency implementation:**
+```typescript
+export function fetchTokenSymbol(tokenAddress: string): string {
+  // ✅ IMPLEMENTED: Static definition check
+  const staticDefinition = getStaticDefinition(tokenAddress);
+  if (staticDefinition !== null) {
+    return staticDefinition.symbol;
+  }
+  
+  // ✅ IMPLEMENTED: RPC call logic
+  // ... rest of implementation
+}
+```
+
+**✅ Step 5a Quality Check:**
+
+#### **5a.1: Review Migration Patterns and Quality Checks**
+- **Read the "Migration Patterns and Quality Checks" section**
+- **Ensure your code follows all documented patterns** (entity creation, updates, BigDecimal precision, etc.)
+- **Check compliance with Effect API requirements** for external calls
+- **Verify all quality check issues are addressed** (imports, types, precision, etc.)
+
+#### **5a.2: Run Technical Validation**
+```bash
+# Run these commands to verify Step 5a completion
+pnpm codegen
+pnpm tsc --noEmit
+TUI_OFF=true pnpm dev
+```
+*Note: Some failures are expected if subsequent steps aren't complete yet - that's okay!*
+
+## Step 5b: Implement Simple Handlers
+
+**Handlers that only set parameter values with minimal processing:**
+- **Handlers that only set parameter values** with minimal processing
+- **Handlers that load existing entities** and update them with new data
+- **Basic event handlers** with no complex business logic or helper function calls
+
+**✅ Step 5b Quality Check:**
+
+#### **5b.1: Review Migration Patterns and Quality Checks**
+- **Read the "Migration Patterns and Quality Checks" section**
+- **Ensure your code follows all documented patterns** (entity creation, updates, BigDecimal precision, etc.)
+- **Check compliance with Effect API requirements** for external calls
+- **Verify all quality check issues are addressed** (imports, types, precision, etc.)
+
+#### **5b.2: Run Technical Validation**
+```bash
+# Run these commands to verify Step 5b completion
+pnpm codegen
+pnpm tsc --noEmit
+TUI_OFF=true pnpm dev
+```
+*Note: Some failures are expected if subsequent steps aren't complete yet - that's okay!*
+
+## Step 5c: Implement Moderate Complexity Handlers + Required Helper Functions
+
+**Handlers that call helper functions but don't create complex entity relationships:**
+- **Handlers that call helper functions** but don't create complex entity relationships
+- **Handlers that update multiple entities** but with straightforward logic
+- **Event handlers with some business logic** but clear, simple dependencies
+
+### Helper Function Implementation Strategy for This Step:
+**As you implement each moderate complexity handler, implement any helper functions it calls along the way:**
+1. **Identify helper functions** called by the current handler
+2. **Check if they have dependencies** on incomplete entities/handlers
+3. **If NO dependencies exist, implement them immediately**
+4. **If they have dependencies, implement their dependencies first**
+5. **Continue this process recursively** until all required helpers are complete
+
+**✅ Step 5c Quality Check:**
+
+#### **5c.1: Review Migration Patterns and Quality Checks**
+- **Read the "Migration Patterns and Quality Checks" section**
+- **Ensure your code follows all documented patterns** (entity creation, updates, BigDecimal precision, etc.)
+- **Check compliance with Effect API requirements** for external calls
+- **Verify all quality check issues are addressed** (imports, types, precision, etc.)
+
+#### **5c.2: Run Technical Validation**
+```bash
+# Run these commands to verify Step 5c completion
+pnpm codegen
+pnpm tsc --noEmit
+TUI_OFF=true pnpm dev
+```
+*Note: Some failures are expected if subsequent steps aren't complete yet - that's okay!*
+
+## Step 5d: Implement Complex Handlers (One at a Time)
+
+**Handlers that call multiple helper functions or other handlers:**
+- **Handlers that call multiple helper functions** or other handlers
+- **Handlers with complex business logic** and multiple entity relationships
+- **Handlers that require extensive data processing** or calculations
+- **Handlers that implement contract binding** (RPC calls to fetch state)
+- **Handlers that depend on multiple other handlers** being complete
+
+### Implementation Strategy for Complex Handlers:
+1. **Implement ONE complex handler at a time**
+2. **Identify all helper functions** it calls
+3. **Implement any missing helper functions** (following dependency rules)
+4. **Run quality checks after EACH helper function implementation**
+5. **Run quality checks after the handler implementation**
+6. **Move to the next complex handler** only after the current one is complete
+
+**✅ Quality Check After Each Helper Function:**
+```bash
+# Run these commands after implementing EACH helper function
+pnpm codegen
+pnpm tsc --noEmit
+TUI_OFF=true pnpm dev
+```
+
+**✅ Quality Check After Each Handler:**
+```bash
+# Run these commands after implementing EACH complex handler
+pnpm codegen
+pnpm tsc --noEmit
+TUI_OFF=true pnpm dev
+```
+*Note: Each handler and its helper functions should be fully functional before moving to the next one!*
+
+### Why This Order Matters:
+- Prevents "entity not found" errors during development
+- Ensures required entities exist before complex handlers try to use them
+- Allows incremental testing and validation
+- Reduces circular dependency issues
+- Enables systematic debugging and validation
+
+**✅ Step 5 Quality Check:**
+
+#### **5.1: Review Migration Patterns and Quality Checks**
+- **Read the "Migration Patterns and Quality Checks" section**
+- **Ensure your code follows all documented patterns** (entity creation, updates, BigDecimal precision, etc.)
+- **Check compliance with Effect API requirements** for external calls
+- **Verify all quality check issues are addressed** (imports, types, precision, etc.)
+
+#### **5.2: Run Technical Validation**
+```bash
+# Run these commands to verify Step 5 completion
+pnpm codegen
+pnpm tsc --noEmit
+TUI_OFF=true pnpm dev
+```
+*Note: Some failures are expected if subsequent steps aren't complete yet - that's okay!*
+
+## **Step 6: Final Migration Verification**
+
+**🚨 CRITICAL: This is the final step to ensure complete migration accuracy**
+
+### **6.1: Systematic Handler Logic Review**
+**Go through each handler in each file one by one:**
+
+1. **For each handler, compare the logic to the subgraph implementation**
+2. **Identify any missing logic or unnecessary logic**
+3. **Update the handler accordingly**
+4. **Run the same check again on the updated code** (you'll likely find something else/new)
+5. **Repeat this process until the logic is correct**
+6. **Do this slowly, one by one, for every handler**
+
+**Why this iterative approach is critical:**
+- **First pass** often misses subtle logic differences
+- **Second pass** reveals issues introduced by the first pass
+- **Multiple iterations** ensure complete accuracy
+- **Slow, methodical review** prevents missing critical details
+
+### **6.2: Systematic Helper Function Logic Review**
+**Go through each helper function in every file one by one:**
+
+1. **For each helper function, compare the logic to the subgraph implementation**
+2. **Identify any missing logic or unnecessary logic**
+3. **Update the helper function accordingly**
+4. **Run the same check again on the updated code**
+5. **Repeat this process until the logic is correct**
+6. **Do this slowly, one by one, for every helper function**
+
+### **6.3: MDC File Consultation**
+**When uncertain about something, ALWAYS consult the MDC file:**
+
+- **Check existing solutions** for similar problems
+- **Reference the quality check checklist** to avoid common mistakes
+- **Look for similar examples** in the MDC file
+- **Use documented Envio patterns** instead of guessing
+
+### **6.4: Implementation Order**
+**Follow this order for maximum efficiency:**
+
+1. **Start with simple handlers** - those with minimal business logic
+2. **Move to complex handlers** - those with extensive calculations or multiple entity updates
+3. **Review helper functions** - after handlers are complete
+4. **Final integration check** - ensure all pieces work together
+
+### **6.5: Verification Checklist**
+**After each handler/function review, verify:**
+
+- [ ] **Logic matches subgraph exactly** - no missing or extra logic
+- [ ] **All edge cases handled** - same conditional branches as subgraph
+- [ ] **Entity operations correct** - proper loading, updating, saving
+- [ ] **Helper function calls complete** - all required functions called
+- [ ] **Error handling matches** - same try/catch and validation logic
+- [ ] **Calculations identical** - same mathematical operations and precision
+
+### **Example of Complete Logic Review:**
+```typescript
+// ❌ BEFORE - Missing logic from subgraph
+export async function handleMint(event: any, context: any) {
+  const mint: Mint = {
+    id: mintId,
+    amount0: event.params.amount0,
+    amount1: event.params.amount1,
+    // Missing: sender, to, feeTo, feeLiquidity, amountUSD calculations
+  };
+  context.Mint.set(mint);
+}
+
+// ✅ AFTER - Complete logic matching subgraph
+export async function handleMint(event: any, context: any) {
+  // Load existing mint entity (created by Transfer handler)
+  const existingMint = await context.Mint.getWhere.transaction_id.eq(transactionId);
+  
+  if (existingMint) {
+    // Update existing mint with complete data
+    const updatedMint: Mint = {
+      ...existingMint,
+      sender: event.params.sender,
+      to: event.params.to,
+      amount0: event.params.amount0,
+      amount1: event.params.amount1,
+      feeTo: feeToAddress,
+      feeLiquidity: calculatedFeeLiquidity,
+      amountUSD: calculatedAmountUSD,
+      logIndex: event.logIndex,
+    };
+    context.Mint.set(updatedMint);
+  }
+  
+  // Update all related entities (token0, token1, pair, factory)
+  // ... complete implementation matching subgraph
+}
+```
+
+### **Why This Step is Critical:**
+- **Ensures complete migration** - no functionality is lost
+- **Maintains data accuracy** - same business logic as original
+- **Prevents runtime errors** - all edge cases are handled
+- **Guarantees compatibility** - same behavior as original subgraph
+
+**This systematic review is the final quality gate before your migration is production-ready.**
+
+**✅ Step 6 Quality Check:**
+
+#### **6.1: Review Migration Patterns and Quality Checks**
+- **Read the "Migration Patterns and Quality Checks" section**
+- **Ensure your code follows all documented patterns** (entity creation, updates, BigDecimal precision, etc.)
+- **Check compliance with Effect API requirements** for external calls
+- **Verify all quality check issues are addressed** (imports, types, precision, etc.)
+
+#### **6.2: Run Technical Validation**
+```bash
+# Run these commands to verify Step 6 completion
+pnpm codegen
+pnpm tsc --noEmit
+TUI_OFF=true pnpm dev
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Migration Patterns and Quality Checks
+
+**CRITICAL: At the end of each migration step, ALWAYS check for and fix these common issues:**
+
+### Migration Patterns and Common Patterns
+
+### Entity Creation Pattern
 
 ```typescript
 // OLD SUBGRAPH PATTERN:
@@ -634,7 +953,7 @@ const entity: EventEntity = {
 context.EventEntity.set(entity);
 ```
 
-#### Entity Updates Pattern
+### Entity Updates Pattern
 
 ```typescript
 // OLD SUBGRAPH PATTERN:
@@ -656,7 +975,7 @@ if (entity) {
 }
 ```
 
-#### Contract Registration Pattern
+### Contract Registration Pattern
 
 ```typescript
 // OLD SUBGRAPH PATTERN:
@@ -668,7 +987,7 @@ Contract.EventCreated.contractRegister(({ event, context }) => {
 });
 ```
 
-#### CRITICAL: Maintain BigDecimal Precision from Original Subgraph
+### CRITICAL: Maintain BigDecimal Precision from Original Subgraph
 
 **IMPORTANT: When migrating from TheGraph to Envio, you MUST maintain the same mathematical precision used in the original subgraph.**
 
@@ -775,11 +1094,68 @@ const pair: Pair = {
 4. **Test precision** with large numbers to ensure no floating-point errors
 5. **Compare behavior** with original subgraph for mathematical consistency
 
+## External Calls and Effect API
+
+**🚨 CRITICAL: ALL external calls MUST use the Effect API when `preload_handlers: true` is enabled in config.yaml.**
+
+### Overview
+
+When migrating from TheGraph to Envio, external calls (RPC calls, API calls, etc.) must use the Effect API instead of direct calls. This is mandatory when preload optimizations are enabled.
+
+### Effect API Pattern
+
+Add `preload_handlers: true` to the `config.yaml` file to enable preload optimisations. With preload optimisations, handlers will run twice.
+
+**So if there's an external call, you MUST use the Effect API to make it.**
+
+```ts
+// Import the Effect API from "envio"
+import { S, experimental_createEffect } from "envio";
+
+// Define an effect. It can have any name you want.
+export const getSomething = experimental_createEffect(
+  {
+    // The name for debugging purposes
+    name: "getSomething",
+    // The input schema for the effect
+    input: {
+      address: S.string,
+      blockNumber: S.number,
+    },
+    output: S.union([S.string, null]),
+  },
+  async ({ input, context }) => {
+    // Fetch or other external calls MUST always be done in an effect.
+    const something = await fetch(
+      `https://api.example.com/something?address=${input.address}&blockNumber=${input.blockNumber}`
+    );
+    return something.json();
+  }
+);
+```
+
+The `S` module exposes a schema creation API: https://raw.githubusercontent.com/DZakh/sury/refs/tags/v9.3.0/docs/js-usage.md
+
+```ts
+import { getSomething } from "./effects";
+
+Contract.Event.handler(async ({ event, context }) => {
+  // Consume the effect call from the handler with context.effect
+  const something = await context.effect(getSomething, {
+    address: event.srcAddress,
+    blockNumber: event.block.number,
+  });
+  // Other handler code...
+});
+```
+
+You can also use `!context.isPreload` check, to prevent some logic to run during preload.
+
 ## Contract State Fetching Migration
 
 ### Overview
 
-When migrating from TheGraph to Envio, contract state fetching patterns need to be updated. TheGraph uses `.bind()` patterns for contract state access, while Envio requires explicit RPC calls using Viem or similar libraries.
+When migrating from TheGraph to Envio, contract state fetching patterns need to be updated. TheGraph uses `.bind()` patterns for contract state access, while Envio requires explicit RPC calls using the Effect API.
 
 ### 1. Identify Contract State Usage
 
@@ -802,88 +1178,14 @@ entity.totalAssets = vault.totalAssets();
 entity.totalShares = vault.totalSupply();
 ```
 
-### 2. Create Contract Helper Functions
+### 2. Create Effect for Token Metadata Fetching
 
-**Create utility functions for contract state fetching:**
-
-```typescript
-// src/utils/contractHelpers.ts
-export interface TokenMetadata {
-  name: string;
-  symbol: string;
-  decimals: number;
-  totalSupply: bigint;
-}
-
-
-
-/**
- * Fetch ERC20 token metadata using Viem RPC calls
- * @param tokenAddress The token contract address (can be vault or token)
- * @returns Promise<TokenMetadata> Token metadata
- */
-export async function getTokenMetadata(tokenAddress: string): Promise<TokenMetadata> {
-  try {
-    const [name, symbol, decimals, totalSupply] = await Promise.all([
-      publicClient.readContract({
-        address: tokenAddress as `0x${string}`,
-        abi: ERC20_ABI,
-        functionName: 'name',
-      }),
-      publicClient.readContract({
-        address: tokenAddress as `0x${string}`,
-        abi: ERC20_ABI,
-        functionName: 'symbol',
-      }),
-      publicClient.readContract({
-        address: tokenAddress as `0x${string}`,
-        abi: ERC20_ABI,
-        functionName: 'decimals',
-      }),
-      publicClient.readContract({
-        address: tokenAddress as `0x${string}`,
-        abi: ERC20_ABI,
-        functionName: 'totalSupply',
-      }),
-    ]);
-
-    return {
-      name,
-      symbol,
-      decimals: Number(decimals),
-      totalSupply,
-    };
-  } catch (error) {
-    console.error(`Error fetching token metadata for ${tokenAddress}:`, error);
-    throw error;
-  }
-}
-
-
-
-/**
- * Batch fetch token metadata for multiple tokens
- * @param tokenAddresses Array of token addresses
- * @returns Promise<TokenMetadata[]> Array of token metadata
- */
-export async function getBatchTokenMetadata(tokenAddresses: string[]): Promise<TokenMetadata[]> {
-  const promises = tokenAddresses.map(address => getTokenMetadata(address));
-  return Promise.all(promises);
-}
-
-
-```
-
-### 3. Implement Viem Contract State Fetching
-
-**For production use, implement actual Viem RPC calls:**
+**🚨 CRITICAL: Use the Effect API for all external calls (RPC calls, API calls, etc.)**
 
 ```typescript
-import { createPublicClient, http, parseAbi } from 'viem';
-import dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config();
+// src/effects/tokenMetadata.ts
+import { experimental_createEffect, S } from "envio";
+import { createPublicClient, http, parseAbi } from "viem";
 
 // ERC20 ABI for basic token functions
 const ERC20_ABI = parseAbi([
@@ -891,16 +1193,12 @@ const ERC20_ABI = parseAbi([
   'function symbol() view returns (string)',
   'function decimals() view returns (uint8)',
   'function totalSupply() view returns (uint256)',
-  'function balanceOf(address) view returns (uint256)',
 ]);
 
-
-
 // Create a public client for reading contract state
-// Using MegaETH testnet (network ID 6342)
 const publicClient = createPublicClient({
   chain: {
-    id: 6342,
+    id: 6342, // MegaETH Testnet - adjust for your network
     name: 'MegaETH Testnet',
     network: 'megaeth-testnet',
     nativeCurrency: {
@@ -920,14 +1218,66 @@ const publicClient = createPublicClient({
   transport: http(process.env.RPC_URL),
 });
 
+// Define the effect to fetch token metadata
+export const getTokenMetadata = experimental_createEffect(
+  {
+    name: "getTokenMetadata",
+    input: S.string, // Token contract address
+    output: S.object({
+      name: S.string,
+      symbol: S.string,
+      decimals: S.number,
+      totalSupply: S.string, // BigInt as string
+    }),
+  },
+  async ({ input: tokenAddress, context }) => {
+    try {
+      const [name, symbol, decimals, totalSupply] = await Promise.all([
+        publicClient.readContract({
+          address: tokenAddress as `0x${string}`,
+          abi: ERC20_ABI,
+          functionName: 'name',
+        }),
+        publicClient.readContract({
+          address: tokenAddress as `0x${string}`,
+          abi: ERC20_ABI,
+          functionName: 'symbol',
+        }),
+        publicClient.readContract({
+          address: tokenAddress as `0x${string}`,
+          abi: ERC20_ABI,
+          functionName: 'decimals',
+        }),
+        publicClient.readContract({
+          address: tokenAddress as `0x${string}`,
+          abi: ERC20_ABI,
+          functionName: 'totalSupply',
+        }),
+      ]);
 
-
-
+      return {
+        name,
+        symbol,
+        decimals: Number(decimals),
+        totalSupply: totalSupply.toString(),
+      };
+    } catch (error) {
+      context.log.error(`Error fetching token metadata for ${tokenAddress}: ${error}`);
+      // Return default values on error
+      return {
+        name: "Unknown",
+        symbol: "Unknown", 
+        decimals: 0,
+        totalSupply: "0",
+      };
+    }
+  }
+);
 ```
 
-### 4. Handler Implementation Pattern
+### 4. Handler Implementation Pattern Using Effect API
 
-**Replace `.bind()` patterns with async contract state fetching:**
+**🚨 CRITICAL: Use Effect API for all external calls in handlers**
 
 ```typescript
 // OLD SUBGRAPH PATTERN:
@@ -939,12 +1289,14 @@ Contract.EventName.handler((event) => {
   entity.save();
 });
 
-// NEW ENVIO PATTERN:
+// NEW ENVIO PATTERN WITH EFFECT API:
+import { getTokenMetadata } from './effects/tokenMetadata';
+
 Contract.EventName.handler(async ({ event, context }) => {
   try {
-    // Fetch contract state using helper functions
-    const tokenMetadata = await getTokenMetadata(event.params.token);
-    const vaultMetadata = await getTokenMetadata(event.params.vault); // Vault is also an ERC20 token
+    // Use Effect API to fetch contract state
+    const tokenMetadata = await context.effect(getTokenMetadata, event.params.token);
+    const vaultMetadata = await context.effect(getTokenMetadata, event.params.vault); // Vault is also an ERC20 token
     
     // Create entity with fetched data
     const entity: Entity = {
@@ -952,11 +1304,11 @@ Contract.EventName.handler(async ({ event, context }) => {
       name: tokenMetadata.name,
       symbol: tokenMetadata.symbol,
       decimals: BigInt(tokenMetadata.decimals),
-      totalSupply: tokenMetadata.totalSupply,
+      totalSupply: BigInt(tokenMetadata.totalSupply),
       vaultName: vaultMetadata.name,
       vaultSymbol: vaultMetadata.symbol,
       vaultDecimals: BigInt(vaultMetadata.decimals),
-      vaultTotalSupply: vaultMetadata.totalSupply,
+      vaultTotalSupply: BigInt(vaultMetadata.totalSupply),
       blockNumber: BigInt(event.block.number),
       blockTimestamp: BigInt(event.block.timestamp),
       transactionHash: event.transaction.hash,
@@ -964,18 +1316,20 @@ Contract.EventName.handler(async ({ event, context }) => {
 
     context.Entity.set(entity);
   } catch (error) {
-    console.error(`Error in EventName handler: ${error}`);
+    context.log.error(`Error in EventName handler: ${error}`);
     // Don't throw - let the indexer continue
   }
 });
 ```
 
-### 5. Factory Contract Registration with State Fetching
+### 5. Factory Contract Registration with Effect API
 
-**Example: Contract Factory with contract state fetching:**
+**Example: Contract Factory with Effect API for contract state fetching:**
 
 ```typescript
 // Reference: original-subgraph/src/contractFactory.ts
+import { getTokenMetadata } from './effects/tokenMetadata';
+
 ContractFactory.ContractCreated.contractRegister(({ event, context }) => {
   context.addContract(event.params.contract);
 });
@@ -1001,10 +1355,10 @@ ContractFactory.ContractCreated.handler(async ({ event, context }) => {
     };
     context.ContractFactory.set(updatedContractFactory);
 
-    // Fetch ERC20 metadata for both contract and token (parallel)
+    // Use Effect API to fetch ERC20 metadata for both contract and token (parallel)
     const [contractMetadata, tokenMetadata] = await Promise.all([
-      getTokenMetadata(event.params.contract), // Contract is also an ERC20 token
-      getTokenMetadata(event.params.token), // Token is an ERC20 token
+      context.effect(getTokenMetadata, event.params.contract), // Contract is also an ERC20 token
+      context.effect(getTokenMetadata, event.params.token), // Token is an ERC20 token
     ]);
     
     // Get or create Token entity
@@ -1015,6 +1369,7 @@ ContractFactory.ContractCreated.handler(async ({ event, context }) => {
         name: tokenMetadata.name,
         symbol: tokenMetadata.symbol,
         decimals: BigInt(tokenMetadata.decimals),
+        totalSupply: BigInt(tokenMetadata.totalSupply),
         rate: ZERO_BD as any,
         dataFeedId: event.params.token,
         updatedAt: BigInt(event.block.timestamp),
@@ -1054,30 +1409,35 @@ ContractFactory.ContractCreated.handler(async ({ event, context }) => {
     context.ContractDataEntity.set(contract);
 
   } catch (error) {
-    console.error(`Error in VaultCreated handler: ${error}`);
+    context.log.error(`Error in ContractCreated handler: ${error}`);
     // Don't throw - let the indexer continue
   }
 });
 ```
 
-### 6. Error Handling for Contract State Fetching
+### 6. Error Handling and Batch Calls
 
-**Always include proper error handling for RPC calls:**
+**Always include proper error handling for Effect API calls:**
 
 ```typescript
+import { getTokenMetadata } from './effects/tokenMetadata';
+
 Contract.EventName.handler(async ({ event, context }) => {
   try {
-    // Fetch contract state
-    const tokenMetadata = await getTokenMetadata(event.params.token);
+    // Batch multiple Effect API calls for efficiency
+    const [tokenMetadata, vaultMetadata] = await Promise.all([
+      context.effect(getTokenMetadata, event.params.token),
+      context.effect(getTokenMetadata, event.params.vault), // Vault is also an ERC20 token
+    ]);
     
     // Create entity with fetched data
     const entity: Entity = {
-      // ... entity fields
+      // ... entity fields using all metadata
     };
 
     context.Entity.set(entity);
   } catch (error) {
-    console.error(`Error fetching contract state for ${event.params.token}:`, error);
+    context.log.error(`Error in EventName handler: ${error}`);
     
     // Option 1: Use default values
     const entity: Entity = {
@@ -1094,39 +1454,15 @@ Contract.EventName.handler(async ({ event, context }) => {
 });
 ```
 
-### 7. Batch Contract State Fetching
+### 7. Configuration for Effect API
 
-**For efficiency, batch multiple contract state fetches:**
-
-```typescript
-Contract.EventName.handler(async ({ event, context }) => {
-  try {
-    // Batch fetch multiple contract states
-    const [tokenMetadata, vaultMetadata, poolMetadata] = await Promise.all([
-      getTokenMetadata(event.params.token),
-      getTokenMetadata(event.params.vault), // Vault is also an ERC20 token
-      getPoolMetadata(event.params.pool),
-    ]);
-    
-    // Create entities with all fetched data
-    const entity: Entity = {
-      // ... entity fields using all metadata
-    };
-
-    context.Entity.set(entity);
-  } catch (error) {
-    console.error(`Error in batch contract state fetch:`, error);
-    // Handle error appropriately
-  }
-});
-```
-
-### 8. Configuration for Contract State Fetching
-
-**Add field selection for events that need transaction data:**
+**Add preload_handlers and field selection for events that need transaction data:**
 
 ```yaml
 # config.yaml
+preload_handlers: true  # Enable preload optimizations for Effect API
+
+contracts:
 - name: ContractFactory
   address:
     - 0xContractFactoryAddress
@@ -1138,887 +1474,16 @@ Contract.EventName.handler(async ({ event, context }) => {
           - hash
 ```
 
-### 9. Dependencies Installation
-
-**Install Viem for contract state fetching:**
-
+**✅ Effect API Implementation Quality Check:**
 ```bash
-pnpm add viem
+# Run these commands to verify Effect API implementation
+pnpm codegen
+pnpm tsc --noEmit
+TUI_OFF=true pnpm dev
 ```
+*Note: Some failures are expected if subsequent steps aren't complete yet - that's okay!*
 
-### 10. Validation Commands
-
-**After implementing contract state fetching:**
-
-1. `pnpm codegen` - Regenerate types after schema changes
-2. `pnpm tsc --noEmit` - Check TypeScript compilation
-3. `TUI_OFF=true pnpm dev` - Test runtime behavior with contract state fetching
-
-## Key Differences Between TheGraph and Envio
-
-### 1. Entity Relationships
-
-**TheGraph (OLD):**
-```typescript
-entity.relatedEntity = event.params.entity.toHexString();
-```
-
-**Envio (NEW):**
-```typescript
-relatedEntity_id: event.params.entity;
-```
-
-### 2. Timestamp Handling
-
-**TheGraph (OLD):**
-```typescript
-entity.blockTimestamp = event.block.timestamp;
-```
-
-**Envio (NEW):**
-```typescript
-blockTimestamp: BigInt(event.block.timestamp);
-```
-
-### 3. ID Generation
-
-**TheGraph (OLD):**
-```typescript
-let entity = new EntityName(
-  event.transaction.hash.concatI32(event.logIndex.toI32())
-);
-```
-
-**Envio (NEW):**
-```typescript
-const entity: EntityName = {
-  id: `${event.chainId}_${event.transaction.hash}_${event.logIndex}`,
-  // ... other fields
-};
-```
-
-### 4. Entity Storage
-
-**TheGraph (OLD):**
-```typescript
-entity.save();
-```
-
-**Envio (NEW):**
-```typescript
-context.EntityName.set(entity);
-```
-
-## Schema Migration Rules
-
-### 1. Remove @entity Decorators
-
-**OLD (TheGraph):**
-```graphql
-type Pool @entity {
-  id: ID!
-  # ...
-}
-```
-
-**NEW (Envio):**
-```graphql
-type Pool {
-  id: ID!
-  # ...
-}
-```
-
-### 2. Avoid Reserved Words in Field Names
-
-**IMPORTANT:** Avoid using reserved words as field names. Common reserved words include:
-- `action` (use `actionType` instead)
-- `type` (use `entityType` instead)
-- `order` (use `orderType` instead)
-- `group` (use `groupType` instead)
-- `user` (use `userId` instead)
-
-**Example:**
-```graphql
-# ❌ AVOID - Reserved word
-type UserAction {
-  action: ActionType!
-}
-
-# ✅ USE - Descriptive name
-type UserAction {
-  actionType: ActionType!
-}
-```
-
-### 3. Convert Raw Events to Envio Format
-
-**CONVERT raw event entities from TheGraph to Envio format:**
-
-```graphql
-# OLD (TheGraph):
-type EventEntity @entity(immutable: true) {
-  id: Bytes!
-  field1: Bytes!
-  field2: BigInt!
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-# NEW (Envio):
-type EventEntity {
-  id: ID!
-  field1: String!
-  field2: BigInt!
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: String!
-}
-```
-
-**KEEP all entities from the original subgraph** but convert them to Envio format:
-- Remove `@entity` decorators
-- Change `Bytes!` to `String!`
-- Change `ID!` to `ID!` (keep as is)
-- Keep all business logic entities
-- **Rename reserved word fields** to avoid conflicts
-
-## Configuration Migration
-
-### 1. Event Selection
-
-**OLD (subgraph.yaml):**
-```yaml
-dataSources:
-  - kind: ethereum
-    source:
-      address: "0x..."
-    mapping:
-      eventHandlers:
-        - event: EventName(indexed address,indexed bool,uint256,uint256,uint256)
-```
-
-**NEW (config.yaml):**
-```yaml
-- name: Contract
-  address:
-    - "0x..."
-  handler: src/contract.ts
-  events:
-    - event: EventName(bool indexed isLender, address indexed maker, uint256 rate, uint256 ltv, uint256 amount)
-```
-
-### 2. Dynamic Contract Configuration
-
-**IMPORTANT: Dynamic contracts (created by factories) should NOT have addresses in config.yaml:**
-
-```yaml
-# ✅ CORRECT - Factory contract (has address)
-- name: Factory
-  address:
-    - 0xFactoryAddress
-  handler: src/factory.ts
-
-# ✅ CORRECT - Dynamic contract (no address - created by factory)
-- name: Pair
-  handler: src/core.ts  # No address field!
-  events:
-    - event: Mint(...)
-      handler: handleMint
-
-# ❌ WRONG - Dynamic contract should not have address
-- name: Pair
-  address:  # This will cause issues!
-    - 0xSomeAddress
-  handler: src/core.ts
-```
-
-**Why this matters:**
-- Factory contracts need addresses to know where to listen for events
-- Dynamic contracts get their addresses from factory events via `contractRegister`
-- Including addresses for dynamic contracts can cause conflicts and indexing issues
-
-This uses the human readable event name, this is pulled from the ABI file
-
-### 2. Field Selection
-
-When using transaction-level data, explicitly define field selection:
-
-```yaml
-- name: Contract
-  address:
-    - "0x..."
-  handler: src/contract.ts
-  events:
-    - event: EventName(address,bool,uint256,uint256,uint256)
-      field_selection:
-        transaction_fields:
-          - hash
-        block_fields:
-          - number
-          - timestamp
-```
-
-## Implementation Checklist
-
-### For Each Handler:
-
-1. ✅ Clear boilerplate code
-2. ✅ Reference original subgraph logic
-3. ✅ Convert entity creation pattern
-4. ✅ Update timestamp handling (BigInt)
-5. ✅ Use proper ID generation
-6. ✅ Add proper error handling
-7. ✅ Test with `pnpm tsc --noEmit`
-
-### For File Structure:
-
-1. ✅ Create directory structure (entities/, intervals/, utils/)
-2. ✅ Move handlers to contract-specific files
-3. ✅ Update config.yaml handler paths
-4. ✅ Remove original EventHandlers.ts file
-5. ✅ Run `pnpm codegen` after changes
-6. ✅ Validate with `pnpm tsc --noEmit`
-
-### For Dynamic Contract Registration:
-
-1. ✅ Identify dynamic contracts in subgraph.yaml (no address)
-2. ✅ Add `contractRegister` for factory events that create contracts
-3. ✅ Use correct `context.add<ContractName>()` method
-4. ✅ Place above the corresponding event handler
-5. ✅ **Remove `address` field from dynamic contracts in config.yaml**
-6. ✅ Test that new contracts are being tracked
-
-### For Schema Updates:
-
-1. ✅ Remove @entity decorators
-2. ✅ Convert Bytes! to String! in all entities
-3. ✅ Keep all entities from original subgraph
-4. ✅ Run `pnpm codegen` after changes
-5. ✅ Validate with `pnpm tsc --noEmit`
-
-### For Configuration:
-
-1. ✅ Convert subgraph.yaml to config.yaml format
-2. ✅ Add explicit field selection when needed
-3. ✅ Test configuration with `TUI_OFF=true pnpm dev`
-
-## Common Migration Patterns
-
-### 1. Simple Event Handler
-
-```typescript
-// Reference: original-subgraph/src/contract.ts
-Contract.EventName.handler(async ({ event, context }) => {
-  const entity: EventEntity = {
-    id: `${event.chainId}_${event.transaction.hash}_${event.logIndex}`,
-    field1: event.params.field1,
-    field2: event.params.field2,
-    blockNumber: BigInt(event.block.number),
-    blockTimestamp: BigInt(event.block.timestamp),
-    transactionHash: event.transaction.hash,
-  };
-
-  context.EventEntity.set(entity);
-});
-```
-
-### 2. Factory Contract Registration
-
-```typescript
-// Reference: original-subgraph/src/factory.ts
-Factory.ContractCreated.contractRegister(({ event, context }) => {
-  context.addContract(event.params.contract);
-});
-
-Factory.ContractCreated.handler(async ({ event, context }) => {
-  const entity: ContractCreated = {
-    id: `${event.chainId}_${event.transaction.hash}_${event.logIndex}`,
-    contract: event.params.contract,
-    blockNumber: BigInt(event.block.number),
-    blockTimestamp: BigInt(event.block.timestamp),
-    transactionHash: event.transaction.hash,
-  };
-
-  context.ContractCreated.set(entity);
-});
-```
-
-### 3. Complex Business Logic
-
-```typescript
-// Reference: original-subgraph/src/contract.ts
-Contract.EventName.handler(async ({ event, context }) => {
-  // Get or create entity
-  let entity = await context.Entity.get(event.params.entityId);
-  if (!entity) {
-    entity = {
-      id: event.params.entityId,
-      field1: BigInt(0),
-      field2: BigInt(0),
-      // ... other fields
-    };
-  }
-
-  // Update entity with new data
-  const updatedEntity: Entity = {
-    ...entity,
-    field1: entity.field1 + event.params.value,
-    updatedAt: BigInt(event.block.timestamp),
-  };
-
-  context.Entity.set(updatedEntity);
-
-  // Create event entity
-  const eventEntity: EventEntity = {
-    id: `${event.chainId}_${event.transaction.hash}_${event.logIndex}`,
-    entity_id: event.params.entityId,
-    value: event.params.value,
-    blockNumber: BigInt(event.block.number),
-    blockTimestamp: BigInt(event.block.timestamp),
-    transactionHash: event.transaction.hash,
-  };
-
-  context.EventEntity.set(eventEntity);
-});
-```
-
-## Incremental Entity Implementation
-
-**Start with simple entities that don't get affected by multiple handlers:**
-
-1. **Add field selection to config.yaml** for specific events that need transaction hash:
-   ```yaml
-   - event: EventName(address indexed param1, address indexed param2)
-     field_selection:
-       transaction_fields:
-         - hash
-   ```
-
-2. **Implement handler logic** based on original subgraph:
-   ```typescript
-   // Reference: original-subgraph/src/contract.ts - handleEventName
-   Contract.EventName.handler(async ({ event, context }) => {
-     const entity: EventEntity = {
-       id: `${event.chainId}_${event.transaction.hash}_${event.logIndex}`,
-       param1: event.params.param1,
-       param2: event.params.param2,
-       blockNumber: BigInt(event.block.number),
-       blockTimestamp: BigInt(event.block.timestamp),
-       transactionHash: event.transaction.hash,
-     };
-
-     context.EventEntity.set(entity);
-   });
-   ```
-
-3. **Remove `# to-do` comment** from schema for completed entities.
-
-4. **Validate with `pnpm codegen` and `pnpm tsc --noEmit`** after each implementation.
-
-**Batch Implementation Pattern:**
-
-For multiple similar entities, implement them all at once:
-
-1. **Add field selection for all events** that need transaction hash
-2. **Implement all handlers** following the same pattern
-3. **Remove all `# to-do` comments** for completed entities
-4. **Validate the entire batch** with codegen and TypeScript checks
-
-
-
-## Validation Commands
-
-After each change:
-
-1. `pnpm codegen` - Regenerate types after schema changes
-2. `pnpm tsc --noEmit` - Check TypeScript compilation
-3. `TUI_OFF=true pnpm dev` - Test runtime behavior
-
-## Error Handling
-
-Always include proper error handling:
-
-```typescript
-Contract.EventName.handler(async ({ event, context }) => {
-  try {
-    // Implementation here
-  } catch (error) {
-    context.log.error(`Error in EventName handler: ${error}`);
-    // Don't throw - let the indexer continue
-  }
-});
-```
-
-### 11. ERC20 Token Metadata Fetching Logic
-
-**Important Correction:** Both vault and token are ERC20 tokens, so use the same metadata fetching function:
-
-```typescript
-// CORRECT: Both vault and token are ERC20 tokens
-const [vaultMetadata, tokenMetadata] = await Promise.all([
-  getTokenMetadata(event.params.vault), // Vault is also an ERC20 token
-  getTokenMetadata(event.params.token), // Token is an ERC20 token
-]);
-
-// Use vault's ERC20 metadata for vault entity
-const vault: VaultDataEntity = {
-  id: event.params.vault,
-  name: vaultMetadata.name,        // Vault's ERC20 name
-  symbol: vaultMetadata.symbol,    // Vault's ERC20 symbol
-  decimals: BigInt(vaultMetadata.decimals), // Vault's ERC20 decimals
-  // ... other fields
-};
-```
-
-**Common Mistake to Avoid:**
-```typescript
-// ❌ WRONG: Don't create separate vault metadata functions
-// Both vault and token are ERC20 tokens, use the same function
-export async function getVaultMetadata() // This doesn't exist
-export async function getTokenMetadata() // Use this for both
-```
-
-### 12. ConvertToAssetsMultiplier Initialization
-
-**Match the original subgraph logic for initial values:**
-
-```typescript
-// OLD SUBGRAPH PATTERN:
-vaultEntry.convertToAssetsMultiplier = new BigDecimal(ONE_BD);
-
-// NEW ENVIO PATTERN:
-let convertToAssetsMultiplier = ONE_BD as any;
-// In a real implementation, you would calculate this based on vault state
-// For now, use ONE_BD to match the original subgraph logic
-```
-
-**Import the correct constants:**
-```typescript
-import { ONE_BI, ZERO_BI, ZERO_BD, ONE_BD } from "./utils/constants";
-```
-
-### 13. Environment Variables for RPC Access
-
-**Set up environment variables for contract state fetching:**
-
-```bash
-# .env file
-RPC_URL=https://rpc.ankr.com/megaeth_testnet
-```
-
-**Install required dependencies:**
-```bash
-pnpm add viem dotenv
-```
-
-**Load environment variables in contract helpers:**
-```typescript
-import dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config();
-
-// Create a public client for reading contract state
-const publicClient = createPublicClient({
-  chain: avalancheFuji,
-  transport: http(process.env.RPC_URL),
-});
-```
-
-### 14. Optimized Token Metadata Fetching
-
-**Only fetch token metadata when token doesn't exist:**
-
-```typescript
-// Get or create Token entity - only fetch token metadata if token doesn't exist
-let token = await context.Token.get(event.params.token);
-
-if (!token) {
-  // Only fetch token metadata when token doesn't exist (optimization)
-  const tokenMetadata = await getTokenMetadata(event.params.token);
-  
-  token = {
-    id: event.params.token,
-    name: tokenMetadata.name,
-    symbol: tokenMetadata.symbol,
-    decimals: BigInt(tokenMetadata.decimals),
-    // ... other fields
-  };
-  context.Token.set(token);
-}
-// If token exists, use existing data - no RPC call needed
-```
-
-### 15. Complete Contract Factory Implementation
-
-**Full example with all optimizations:**
-
-```typescript
-ContractFactory.ContractCreated.handler(async ({ event, context }) => {
-  try {
-    // Get or create ContractFactory entity
-    let contractFactory = await context.ContractFactory.get(ONE_BI.toString());
-    if (!contractFactory) {
-      contractFactory = {
-        id: ONE_BI.toString(),
-        totalContracts: ZERO_BI,
-        timestamp: BigInt(event.block.timestamp),
-        lastUpdate: BigInt(event.block.timestamp),
-      };
-    }
-
-    // Update contract factory stats
-    const updatedContractFactory = {
-      ...contractFactory,
-      totalContracts: contractFactory.totalContracts + ONE_BI,
-      lastUpdate: BigInt(event.block.timestamp),
-    };
-    context.ContractFactory.set(updatedContractFactory);
-
-    // Fetch ERC20 metadata for both contract and token (parallel)
-    const [contractMetadata, tokenMetadata] = await Promise.all([
-      getTokenMetadata(event.params.contract), // Contract is also an ERC20 token
-      getTokenMetadata(event.params.token), // Token is an ERC20 token
-    ]);
-    
-    // Create ContractDataEntity with contract's ERC20 metadata
-    const contract: ContractDataEntity = {
-      id: event.params.contract,
-      name: contractMetadata.name, // Use contract's ERC20 metadata
-      symbol: contractMetadata.symbol, // Use contract's ERC20 metadata
-      decimals: BigInt(contractMetadata.decimals), // Use contract's ERC20 decimals
-      manager: event.params.poolManager,
-      timestamp: BigInt(event.block.timestamp),
-      lastUpdate: BigInt(event.block.timestamp),
-      fee: ZERO_BI,
-      depositApy: ZERO_BI, // Will be calculated later
-      convertToAssetsMultiplier: ONE_BD as any, // Match original subgraph logic
-      totalDepositsVolume: ZERO_BI,
-      totalWithdrawalsVolume: ZERO_BI,
-      totalAssets: ZERO_BI, // Will be updated later
-      totalShares: ZERO_BI, // Will be updated later
-      token_id: event.params.token,
-      contractFactory_id: ONE_BI.toString(),
-    };
-
-    // Get or create Token entity - only fetch if doesn't exist
-    let token = await context.Token.get(event.params.token);
-    
-    if (!token) {
-      // Only fetch token metadata when token doesn't exist (optimization)
-      token = {
-        id: event.params.token,
-        name: tokenMetadata.name,
-        symbol: tokenMetadata.symbol,
-        decimals: BigInt(tokenMetadata.decimals),
-        rate: ZERO_BD as any,
-        dataFeedId: event.params.token,
-        updatedAt: BigInt(event.block.timestamp),
-        blockNumber: BigInt(event.block.number),
-        blockTimestamp: BigInt(event.block.timestamp),
-        transactionHash: event.transaction.hash,
-        address: event.params.token,
-      };
-      context.Token.set(token);
-    }
-
-    // Set convertToAssetsMultiplier to ONE_BD (match original subgraph)
-    const updatedContract: ContractDataEntity = {
-      ...contract,
-      convertToAssetsMultiplier: ONE_BD as any,
-    };
-
-    context.ContractDataEntity.set(updatedContract);
-
-  } catch (error) {
-    console.error(`Error in VaultCreated handler: ${error}`);
-    // Don't throw - let the indexer continue
-  }
-});
-```
-
-### 16. Network Configuration
-
-**Configure the correct network for your indexer:**
-
-```typescript
-// Create a public client for reading contract state
-// Using MegaETH testnet (network ID 6342)
-const publicClient = createPublicClient({
-  chain: {
-    id: 6342,
-    name: 'MegaETH Testnet',
-    network: 'megaeth-testnet',
-    nativeCurrency: {
-      decimals: 18,
-      name: 'MegaETH',
-      symbol: 'METH',
-    },
-    rpcUrls: {
-      default: {
-        http: [process.env.RPC_URL || 'https://rpc.ankr.com/megaeth_testnet'],
-      },
-      public: {
-        http: [process.env.RPC_URL || 'https://rpc.ankr.com/megaeth_testnet'],
-      },
-    },
-  },
-  transport: http(process.env.RPC_URL),
-});
-```
-
-**Set up environment variables:**
-```bash
-# .env file
-RPC_URL=https://rpc.ankr.com/megaeth_testnet
-```
-
-**Load environment variables:**
-```typescript
-import dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config();
-```
-
-**Common Network IDs:**
-- MegaETH Testnet: 6342
-- Ethereum Mainnet: 1
-- Avalanche Fuji: 43113
-- Polygon Mumbai: 80001
-
-**Check your config.yaml for the correct network ID:**
-```yaml
-networks:
-- id: 6342  # This determines which network to use
-  start_block: 0
-```
-
-### 17. Factory Contract Migration Pattern
-
-**Implement factory contract handlers with address filtering and entity creation:**
-
-```typescript
-// Reference: original-subgraph/src/factory.ts - handleContractCreated
-Factory.ContractCreated.handler(async ({ event, context }) => {
-  try {
-    // Skip specific addresses (from original subgraph logic)
-    const contractAddress = event.params.contract.toLowerCase();
-    if (
-      contractAddress === "0xSpecificAddress1" ||
-      contractAddress === "0xSpecificAddress2"
-    ) {
-      context.log.info(`Skip datasource from wrong param ${contractAddress}`);
-      return;
-    }
-
-    context.log.info(`handleContractCreated ${contractAddress}`);
-
-    // Create event entity with correct ID (from original subgraph)
-    const entity: ContractCreated = {
-      id: event.params.contract, // Use contract address as ID like original subgraph
-      param1: event.params.param1,
-      param2: event.params.param2,
-      contract: event.params.contract,
-      blockNumber: BigInt(event.block.number),
-      blockTimestamp: BigInt(event.block.timestamp),
-      transactionHash: event.transaction.hash,
-    };
-
-    context.ContractCreated.set(entity);
-
-    // Get or create related entities (example: tokens)
-    let relatedEntity = await context.RelatedEntity.get(event.params.relatedParam);
-    if (!relatedEntity) {
-      try {
-        const metadata = await getEntityMetadata(event.params.relatedParam);
-        
-        context.log.info(
-          `CONTRACT CREATED :: FOR RELATED ENTITY ADDRESS:${event.params.relatedParam} NAME:${metadata.name} SYMBOL:${metadata.symbol}`
-        );
-
-        const newRelatedEntity: RelatedEntity = {
-          id: event.params.relatedParam,
-          name: metadata.name,
-          symbol: metadata.symbol,
-          // ... other fields
-          blockNumber: BigInt(event.block.number),
-          blockTimestamp: BigInt(event.block.timestamp),
-          transactionHash: event.transaction.hash,
-        };
-        context.RelatedEntity.set(newRelatedEntity);
-      } catch (error) {
-        context.log.error(`Error fetching metadata for ${event.params.relatedParam}: ${error}`);
-      }
-    }
-
-  } catch (error) {
-    context.log.error(`Error in ContractCreated handler: ${error}`);
-    // Don't throw - let the indexer continue
-  }
-});
-```
-
-**Key Features:**
-1. **Address Filtering**: Skip specific addresses from original subgraph logic
-2. **Contract Registration**: Register new contracts using `context.addContract()`
-3. **Correct Entity ID**: Use event parameter as ID (matches original subgraph pattern)
-4. **Immutable Object Handling**: Create new objects instead of modifying read-only ones
-5. **Metadata Fetching**: Fetch contract state for related entities
-6. **Conditional Entity Creation**: Only create entities if they don't exist (optimization)
-7. **Proper Logging**: Use `context.log.info` and `context.log.error` instead of `console.log`
-8. **Error Handling**: Proper error handling for RPC calls
-
-**Important Patterns:**
-- **Entity ID**: Use `event.params.contract` instead of `${event.chainId}_${event.transaction.hash}_${event.logIndex}`
-- **Immutable Objects**: Create new objects (`newRelatedEntity`) instead of modifying read-only ones
-- **Logging**: Use `context.log.info` and `context.log.error` for proper Envio logging
-
-**Configuration Requirements:**
-```yaml
-# config.yaml
-- event: ContractCreated(address indexed param1, address indexed param2, address contract)
-  field_selection:
-    transaction_fields:
-      - hash
-```
-
-### 18. Logging Best Practices
-
-**Use Envio's logging system instead of console.log:**
-
-```typescript
-// ❌ AVOID - Console logging
-console.log(`Processing event: ${event.params.value}`);
-console.error(`Error: ${error}`);
-
-// ✅ USE - Envio logging
-context.log.info(`Processing event: ${event.params.value}`);
-context.log.error(`Error: ${error}`);
-context.log.warn(`Warning: ${warning}`);
-context.log.debug(`Debug info: ${debugInfo}`);
-```
-
-**Available Logging Methods:**
-- `context.log.info()` - General information
-- `context.log.error()` - Error messages
-- `context.log.warn()` - Warning messages
-- `context.log.debug()` - Debug information
-
-### 19. Immutable Object Handling
-
-**When working with entities from context, create new objects:**
-
-```typescript
-// ❌ AVOID - Modifying read-only objects
-let entity = await context.Entity.get(id);
-if (entity) {
-  entity.field = newValue; // This will fail - object is immutable
-  context.Entity.set(entity);
-}
-
-// ✅ USE - Create new objects with spread operator
-let entity = await context.Entity.get(id);
-if (entity) {
-  const updatedEntity: Entity = {
-    ...entity, // Spread existing properties
-    field: newValue, // Add new/modified properties
-    updatedAt: BigInt(event.block.timestamp),
-  };
-  context.Entity.set(updatedEntity);
-}
-```
-
-**For New Entity Creation:**
-```typescript
-// ✅ CORRECT - Create new entity object
-const newEntity: Entity = {
-  id: event.params.id,
-  field1: event.params.field1,
-  field2: event.params.field2,
-  // ... other fields
-};
-context.Entity.set(newEntity);
-```
-
-### 20. Multiple Events with Same Name
-
-**When a contract has multiple events with the same name but different signatures, use aliases:**
-
-```yaml
-# config.yaml
-- name: Contract
-  handler: src/contract.ts
-  events:
-    # First event with default name
-    - event: EventName(address indexed param1, address indexed param2, uint256 value)
-      field_selection:
-        transaction_fields:
-          - hash
-    # Second event with same name but different signature - use alias
-    - event: EventName(address indexed param3, address param4, uint256 value)
-      name: EventNameAlias
-      field_selection:
-        transaction_fields:
-          - hash
-```
-
-**Handler Implementation:**
-```typescript
-// First event handler
-Contract.EventName.handler(async ({ event, context }) => {
-  const entity: EventEntity = {
-    id: `${event.chainId}_${event.transaction.hash}_${event.logIndex}`,
-    param1: event.params.param1,
-    param2: event.params.param2,
-    value: event.params.value,
-    blockNumber: BigInt(event.block.number),
-    blockTimestamp: BigInt(event.block.timestamp),
-    transactionHash: event.transaction.hash,
-  };
-  context.EventEntity.set(entity);
-});
-
-// Second event handler with alias
-Contract.EventNameAlias.handler(async ({ event, context }) => {
-  const entity: EventEntity = {
-    id: `${event.chainId}_${event.transaction.hash}_${event.logIndex}`,
-    param3: event.params.param3,
-    param4: event.params.param4,
-    value: event.params.value,
-    blockNumber: BigInt(event.block.number),
-    blockTimestamp: BigInt(event.block.timestamp),
-    transactionHash: event.transaction.hash,
-  };
-  context.EventEntity.set(entity);
-});
-```
-
-**Key Points:**
-1. **Use `name` field** in config.yaml to create aliases for events with same name
-2. **Different signatures** require different handlers
-3. **Same entity type** can be used if the data structure is similar
-4. **Field selection** must be specified for each event that needs transaction data
-5. **Regenerate types** after adding new events with `pnpm codegen`
-
-**Example: Pool Withdraw Events**
-```yaml
-# First Withdraw event (standard ERC4626)
-- event: Withdraw(address indexed sender, address indexed receiver, address indexed owner, uint256 assets, uint256 shares)
-
-# Second Withdraw event (pool-specific)
-- event: Withdraw(address indexed poolAddress, address caller, address indexed receiver, uint256 assets, uint256 shares)
-  name: WithdrawPool
-  field_selection:
-    transaction_fields:
-      - hash
-```
-
-### 21. Quality Check and Fix Common Issues
-
-**CRITICAL: At the end of each migration step, ALWAYS check for and fix these common issues:**
+### Quality Check Issues
 
 #### **Issue 1: Entity Type Import Confusion**
 **PROBLEM:** Importing entity types from `"generated"` instead of `"generated/src/db/Entities.gen"`
@@ -2334,301 +1799,9 @@ if (existingMint) {
 - **Always check if entities exist** before updating or creating
 - **Use the spread operator** when updating existing entities (they're read-only)
 
-## **24. Final Migration Verification: Handler and Helper Function Logic Review**
 
-**🚨 CRITICAL: This is the final step to ensure complete migration accuracy**
 
-### **Step 1: Systematic Handler Logic Review**
-**Go through each handler in each file one by one:**
 
-1. **For each handler, compare the logic to the subgraph implementation**
-2. **Identify any missing logic or unnecessary logic**
-3. **Update the handler accordingly**
-4. **Run the same check again on the updated code** (you'll likely find something else/new)
-5. **Repeat this process until the logic is correct**
-6. **Do this slowly, one by one, for every handler**
-
-**Why this iterative approach is critical:**
-- **First pass** often misses subtle logic differences
-- **Second pass** reveals issues introduced by the first pass
-- **Multiple iterations** ensure complete accuracy
-- **Slow, methodical review** prevents missing critical details
-
-### **Step 2: Systematic Helper Function Logic Review**
-**Go through each helper function in every file one by one:**
-
-1. **For each helper function, compare the logic to the subgraph implementation**
-2. **Identify any missing logic or unnecessary logic**
-3. **Update the helper function accordingly**
-4. **Run the same check again on the updated code**
-5. **Repeat this process until the logic is correct**
-6. **Do this slowly, one by one, for every helper function**
-
-### **Step 3: MDC File Consultation**
-**When uncertain about something, ALWAYS consult the MDC file:**
-
-- **Check existing solutions** for similar problems
-- **Reference the quality check checklist** to avoid common mistakes
-- **Look for similar examples** in the MDC file
-- **Use documented Envio patterns** instead of guessing
-
-### **Step 4: Implementation Order**
-**Follow this order for maximum efficiency:**
-
-1. **Start with simple handlers** - those with minimal business logic
-2. **Move to complex handlers** - those with extensive calculations or multiple entity updates
-3. **Review helper functions** - after handlers are complete
-4. **Final integration check** - ensure all pieces work together
-
-### **Step 5: Verification Checklist**
-**After each handler/function review, verify:**
-
-- [ ] **Logic matches subgraph exactly** - no missing or extra logic
-- [ ] **All edge cases handled** - same conditional branches as subgraph
-- [ ] **Entity operations correct** - proper loading, updating, saving
-- [ ] **Helper function calls complete** - all required functions called
-- [ ] **Error handling matches** - same try/catch and validation logic
-- [ ] **Calculations identical** - same mathematical operations and precision
-
-### **Example of Complete Logic Review:**
-```typescript
-// ❌ BEFORE - Missing logic from subgraph
-export async function handleMint(event: any, context: any) {
-  const mint: Mint = {
-    id: mintId,
-    amount0: event.params.amount0,
-    amount1: event.params.amount1,
-    // Missing: sender, to, feeTo, feeLiquidity, amountUSD calculations
-  };
-  context.Mint.set(mint);
-}
-
-// ✅ AFTER - Complete logic matching subgraph
-export async function handleMint(event: any, context: any) {
-  // Load existing mint entity (created by Transfer handler)
-  const existingMint = await context.Mint.getWhere.transaction_id.eq(transactionId);
-  
-  if (existingMint) {
-    // Update existing mint with complete data
-    const updatedMint: Mint = {
-      ...existingMint,
-      sender: event.params.sender,
-      to: event.params.to,
-      amount0: event.params.amount0,
-      amount1: event.params.amount1,
-      feeTo: feeToAddress,
-      feeLiquidity: calculatedFeeLiquidity,
-      amountUSD: calculatedAmountUSD,
-      logIndex: event.logIndex,
-    };
-    context.Mint.set(updatedMint);
-  }
-  
-  // Update all related entities (token0, token1, pair, factory)
-  // ... complete implementation matching subgraph
-}
-```
-
-### **Why This Step is Critical:**
-- **Ensures complete migration** - no functionality is lost
-- **Maintains data accuracy** - same business logic as original
-- **Prevents runtime errors** - all edge cases are handled
-- **Guarantees compatibility** - same behavior as original subgraph
-
-**This systematic review is the final quality gate before your migration is production-ready.**
-
-## **25. Final Migration Verification: TODO Cleanup and Logic Verification**
-
-**CRITICAL: This is the final step to ensure migration completeness**
-
-### **Step 1: Comprehensive TODO Scan**
-**Scan every file in your migrated codebase for TODO comments:**
-
-```bash
-# Search for all TODO comments across the codebase
-grep -r "TODO" src/ --include="*.ts" --include="*.tsx"
-grep -r "FIXME" src/ --include="*.ts" --include="*.tsx"
-grep -r "HACK" src/ --include="*.ts" --include="*.tsx"
-```
-
-### **Step 2: TODO Classification and Action**
-**For each TODO found, determine the appropriate action:**
-
-#### **Category A: Already Implemented**
-- **Symptom:** TODO references functionality that exists elsewhere
-- **Action:** Remove the TODO comment
-- **Example:** `// TODO: Implement fetchTokenSymbol` when the function exists
-
-#### **Category B: Not Yet Implemented**
-- **Symptom:** TODO references functionality that's missing
-- **Action:** Implement the missing functionality
-- **Priority:** High - must be completed before migration is done
-
-#### **Category C: Future Enhancement**
-- **Symptom:** TODO references optional features not in original subgraph
-- **Action:** Document as future work, don't block migration
-- **Example:** `// TODO: Add monitoring and alerting`
-
-### **Step 3: Logic Comparison with Original Subgraph**
-**For each function, compare with the original subgraph implementation:**
-
-#### **Check These Areas:**
-1. **Function signature** - Parameters, return types, async/await
-2. **Core business logic** - All conditional branches, calculations
-3. **Error handling** - Try/catch blocks, null checks, validation
-4. **Entity operations** - Loading, updating, saving entities
-5. **Helper function calls** - All required helper functions called
-6. **Edge cases** - Special conditions, boundary checks
-
-#### **Common Missing Logic:**
-- **Null checks** - Missing validation for loaded entities
-- **Error handling** - Missing try/catch blocks
-- **Edge case handling** - Missing special condition logic
-- **Helper function calls** - Missing calls to required functions
-- **Entity updates** - Missing field updates or saves
-
-### **Step 4: Implementation Order**
-**Implement missing functionality in dependency order:**
-
-1. **Base functions first** - Functions with no dependencies
-2. **Helper functions** - Functions used by handlers
-3. **Handler logic** - Complete event handling logic
-4. **Integration points** - Cross-entity updates and relationships
-
-### **Step 5: Verification Checklist**
-**After cleanup, verify:**
-
-- [ ] **No TODO comments remain** in production code
-- [ ] **All functions have complete logic** matching original subgraph
-- [ ] **All edge cases handled** as in original implementation
-- [ ] **All helper functions called** where required
-- **All entities properly updated** and saved
-- [ ] **Error handling complete** for all failure scenarios
-
-### **Example of Complete TODO Cleanup:**
-```typescript
-// ❌ BEFORE - Incomplete implementation with TODO
-export function findEthPerToken(token: any, context: any): BigDecimal {
-  // TODO: Implement complete logic from original subgraph
-  return ZERO_BD;
-}
-
-// ✅ AFTER - Complete implementation matching original
-export function findEthPerToken(token: any, context: any): BigDecimal {
-  if (token.id === REFERENCE_TOKEN) {
-    return ONE_BD;
-  }
-
-  const bundle = context.Bundle.get('1');
-  if (!bundle) {
-    return ZERO_BD;
-  }
-
-  // ... complete implementation matching original subgraph
-}
-```
-
-**This final step ensures your migration is production-ready with no missing functionality.**
-
-## Entity Relationships
-
-**IMPORTANT**: Entity relationships work differently in Envio vs TheGraph subgraphs.
-
-### Correct Pattern for Entity Relationships in Envio:
-
-1. **Schema Definition**: Define entity relationships using the direct entity type name in the entity that references another entity
-   ```graphql
-   type EntityA {
-     id: ID!
-     relatedEntity: EntityB!        # Direct entity type, not relatedEntity_id: String!
-     anotherEntity: EntityC!        # Direct entity type, not anotherEntity_id: String!
-   }
-   ```
-
-2. **@derivedFrom in Related Entity**: Add `@derivedFrom` in the entity being referenced to establish the reverse relationship
-   ```graphql
-   type EntityB {
-     id: ID!
-     # ... other fields
-     
-     # Reverse relationships - these are VIRTUAL fields
-     entityARelationship: [EntityA!]! @derivedFrom(field: "relatedEntity")
-   }
-   ```
-
-3. **Code Implementation**: When setting entity relationships, use the `_id` suffix and provide the entity identifier
-   ```typescript
-   // CORRECT: Set entity relationships using _id suffix
-   const entityA: EntityA = {
-     id: entityId,
-     relatedEntity_id: entityB.id,    // Use _id suffix, reference source entity's _id field
-     anotherEntity_id: entityC.id,    // Use _id suffix, reference source entity's _id field
-   };
-   ```
-
-4. **Relationship Access Pattern**:
-   - **Schema**: `fieldName: EntityType!` (e.g., `relatedEntity: EntityB!`)
-   - **Code Setting**: `fieldName_id: entityIdentifier`
-   - **Entity Identifier can be**:
-     - Direct address/ID: `relatedEntity_id: "0x1234..."`
-     - From another entity: `relatedEntity_id: sourceEntity.relatedEntity_id`
-     - From event data: `relatedEntity_id: event.params.entityId`
-
-5. **Key Points**:
-   - Use `@derivedFrom` in the entity being referenced (not in the entity doing the referencing)
-   - Always use the `_id` suffix when setting entity relationships in code
-   - The `_id` field contains the entity's unique identifier (usually the address for contracts)
-   - Entity relationships are established by setting the `_id` field, not the full entity object
-
-### Relationship Flow Examples:
-
-**Example 1: Setting Entity Relationship Using Just the Address**
-- **EntityA** has array property `[EntityB!]!` that references **EntityB**
-- **EntityB** exists independently
-- We can set the relationship directly with the address (giving the pointer to the collection it belongs to):
-  ```typescript
-  // Direct address approach - you're giving the pointer to the collection it belongs to
-  entityB_id: "0x6b175474e89094c44da98b954eedeac495271d0f"
-  ```
-
-**Example 2: Setting Entity Relationship from Another Entity Which Points to the Same Collection**
-- **EntityA** has array property `[EntityB!]!` that references **EntityB**
-- **EntityC** also references **EntityB** (via some field)
-- **EntityA** has array property `[EntityC!]!` that references **EntityC**
-- If you know EntityC points to the same EntityB collection, you can reference it through EntityC:
-  ```typescript
-  // From EntityC that points to the same EntityB collection
-  entityB_id: entityC.entityBField_id
-  ```
-
-**Examples**:
-```typescript
-// Setting relationship directly with address
-entityB_id: "0x6b175474e89094c44da98b954eedeac495271d0f"
-
-// Setting relationship from another entity that references it
-entityB_id: sourceEntity.entityBField_id
-
-// Setting relationship from event data
-entityB_id: event.params.entityId
-
-// Setting relationship from a loaded entity
-entityB_id: entity.id
-```
-
-### What NOT to do:
-- ❌ Don't use `@derivedFrom` in the entity doing the referencing
-- ❌ Don't define schema fields as `entityB_id: String!` 
-- ❌ Don't try to set the full entity object in relationships
-- ❌ Don't use `entityB: sourceEntity.entityBField_id` (missing _id suffix)
-
-### What TO do:
-- ✅ Define schema as `entityB: [EntityB!]!` in the referencing entity
-- ✅ Add `@derivedFrom(field: "entityB")` in the EntityB entity
-- ✅ Set in code as `entityB_id: entityIdentifier`
-- ✅ Always use the `_id` suffix when setting relationships
-- ✅ Provide the entity identifier (address, ID, or reference from another entity)
-```
 
 **🚨 CRITICAL: Entity Type Mismatch and Database Schema Compatibility**
 
@@ -2658,6 +1831,5 @@ entityB_id: entity.id
 // ✅ CORRECT - Schema expects Int!, code sets number
 // Schema: date: Int!
 // Code: date: dayStartTimestamp  // dayStartTimestamp is already a number
-```
 ```
 
