@@ -2,7 +2,7 @@
 // Reference: original-subgraph/src/common/hourDayUpdates.ts
 // All helper functions have been implemented below
 
-import { BigDecimal } from "generated";
+import { BigDecimal } from "envio";
 import { ZERO_BD, ZERO_BI, ONE_BI } from "./constants";
 import { getFactoryAddress } from "./chainConfig";
 import {
@@ -189,7 +189,4 @@ export async function updateTokenDayData(
 
   return tokenDayData;
 }
-
-
-
 

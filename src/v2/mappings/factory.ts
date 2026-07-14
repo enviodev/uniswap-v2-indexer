@@ -1,14 +1,13 @@
+import { indexer } from "envio";
 // Factory event handler for Uniswap V2 Factory contract
 // Reference: original-subgraph/src/v2/mappings/factory.ts
 
-import {
-  Factory,  // Contract handler for Factory events
-  Pair,    // Contract handler for Pair events
-  Token,   // Contract handler for Token events
-  UniswapFactory,  // Contract handler for UniswapFactory events
-  Bundle,  // Contract handler for Bundle events
-  PairTokenLookup,  // Contract handler for PairTokenLookup events
-} from "generated";
+import { Factory, // Contract handler for Factory events
+  Pair, // Contract handler for Pair events
+  Token, // Contract handler for Token events
+  UniswapFactory, // Contract handler for UniswapFactory events
+  Bundle, // Contract handler for Bundle events
+  PairTokenLookup, // Contract handler for PairTokenLookup events } from "envio";
 import {
   Pair_t,
   Token_t,
@@ -20,15 +19,19 @@ import { ZERO_BD, ZERO_BI } from "../../common/constants";
 import { getFactoryAddress, getStableTokenPairs } from "../../common/chainConfig";
 import { getTokenSymbol, getTokenName, getTokenTotalSupply, getTokenDecimals } from "../../common/effects";
 
-
 // Register dynamic Pair contracts with Envio
-Factory.PairCreated.contractRegister(({ event, context }) => {
-  context.addPair(`${event.params.pair}`);
-});
+indexer.contractRegister(
+  { contract: "Factory", event: "PairCreated" },
+  ({ event, context }) => {
+  context.chain.Pair.add(`${event.params.pair}`);
+}
+);
 
 // Implement handleNewPair function
 // Reference: original-subgraph/src/v2/mappings/core.ts - handleNewPair
-Factory.PairCreated.handler(async ({ event, context }) => {
+indexer.onEvent(
+  { contract: "Factory", event: "PairCreated" },
+  async ({ event, context }) => {
   try {
     // 1. Load/Create UniswapFactory entity (id: factoryAddress)
     const factoryAddress = getFactoryAddress(event.chainId);
@@ -163,8 +166,6 @@ Factory.PairCreated.handler(async ({ event, context }) => {
     };
     context.Pair.set(pair);
 
-
-
     // 6. Create PairTokenLookup entities for efficient token-pair lookups
     // Create both directions: token0-token1 and token1-token0
     const pairLookup0: PairTokenLookup_t = {
@@ -181,4 +182,5 @@ Factory.PairCreated.handler(async ({ event, context }) => {
   } catch (error) {
     context.log.error(`Error in handleNewPair: ${error}`);
   }
-});
+}
+);

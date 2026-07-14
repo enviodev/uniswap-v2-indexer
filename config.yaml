@@ -26,7 +26,7 @@ contracts:
     field_selection:
       transaction_fields:
         - hash
-networks:
+chains:
 - id: 10143
   start_block: 0
   contracts:
@@ -105,5 +105,3 @@ networks:
 #     address:
 #     - 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f
 # Performance optimizations
-unordered_multichain_mode: true
-preload_handlers: true

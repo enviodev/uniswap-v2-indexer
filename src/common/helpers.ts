@@ -3,7 +3,7 @@
 // Note: RPC calls are now handled by the Effect API in effects.ts
 
 import { ZERO_BI, ZERO_BD, ONE_BI } from './constants';
-import { BigDecimal } from 'generated';
+import { BigDecimal } from "envio";
 
 export function exponentToBigDecimal(decimals: bigint): BigDecimal {
   let bd = new BigDecimal(1);

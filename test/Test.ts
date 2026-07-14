@@ -1,8 +1,5 @@
 import assert from "assert";
-import { 
-  TestHelpers,
-  Factory_PairCreated
-} from "generated";
+import { TestHelpers, Factory_PairCreated } from "envio";
 const { MockDb, Factory } = TestHelpers;
 
 describe("Factory contract PairCreated event tests", () => {

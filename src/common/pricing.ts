@@ -4,7 +4,7 @@
 
 import { ZERO_BD, ONE_BD, ADDRESS_ZERO } from './constants';
 import { getChainConfig, getStableTokenPairs, getWhitelist, getStablecoins } from './chainConfig';
-import { BigDecimal } from 'generated';
+import { BigDecimal } from "envio";
 
 // Return 0 if denominator is 0 in division
 export function safeDiv(amount0: BigDecimal, amount1: BigDecimal): BigDecimal {
