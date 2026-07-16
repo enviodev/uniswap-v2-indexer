@@ -59,8 +59,8 @@ type Pair {
   id: ID!
 
   # mirrored from the smart contract
-  token0: Token!
-  token1: Token!
+  token0: Token! @index
+  token1: Token! @index
   reserve0: BigDecimal!
   reserve1: BigDecimal!
   totalSupply: BigDecimal!
@@ -105,10 +105,13 @@ type Transaction {
   blockNumber: BigInt!
   timestamp: BigInt!
   # This is not the reverse of Mint.transaction; it is only used to
-  # track incomplete mints (similar for burns and swaps)
-  mints: [Mint!]! @derivedFrom(field: "transaction")
-  burns: [Burn!]! @derivedFrom(field: "transaction")
-  swaps: [Swap!]! @derivedFrom(field: "transaction")
+  # track incomplete mints (similar for burns and swaps).
+  # Stored id arrays (NOT @derivedFrom): the subgraph's staged mint/burn
+  # bookkeeping pops and replaces array entries, which a derived relation
+  # cannot express.
+  mints: [String!]!
+  burns: [String!]!
+  swaps: [String!]!
 }
 
 type Mint {
@@ -166,8 +169,8 @@ type Swap {
   # transaction hash + "-" + index in swaps Transaction array
   id: ID!
   transaction: Transaction!
-  timestamp: BigInt! # need this to pull recent txns for specific token or pair
-  pair: Pair!
+  timestamp: BigInt! @index # need this to pull recent txns for specific token or pair
+  pair: Pair! @index
 
   # populated from the Swap event
   sender: String!
@@ -237,7 +240,10 @@ type PairDayData {
   token1: Token!
   reserve0: BigDecimal!
   reserve1: BigDecimal!
-  totalSupply: BigDecimal!
+
+  # total supply for LP historical returns
+  totalSupply: BigDecimal
+
   reserveUSD: BigDecimal!
   dailyVolumeToken0: BigDecimal!
   dailyVolumeToken1: BigDecimal!
