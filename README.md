@@ -37,8 +37,6 @@ Ethereum, Optimism, Arbitrum One, Base, Polygon, BSC, Avalanche, Blast, World Ch
 3. **Interval snapshots see the in-flight event** — the subgraph's helpers re-load entities mid-handler and lag the triggering event by one update; these receive the handler's updated entities.
 4. **Vestigial subgraph schema not ported**: `TokenHourData` (never written by the v2 mappings) and `UniswapDayData.totalVolumeUSD/ETH` stay 0 (never accumulated by the subgraph).
 
-The superseded first-pass implementation is parked under `legacy/` for reference and is safe to delete.
-
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/en/download/current) v22 or newer
