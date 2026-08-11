@@ -36,3 +36,14 @@ logs
 build
 .env
 .envio/
+
+# Envio effect cache. Both the bare `cache` rule and `.envio/` above exclude
+# it, and git will not descend into an excluded directory — so re-include the
+# path step by step, keeping everything else under .envio/ ignored.
+!.envio/
+.envio/*
+!.envio/cache/
+!.envio/cache/*.tsv
+
+# TypeScript incremental build artifact
+*.tsbuildinfo

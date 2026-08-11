@@ -54,13 +54,6 @@ const ERC20_ABI = [
     stateMutability: "view",
     type: "function",
   },
-  {
-    inputs: [],
-    name: "totalSupply",
-    outputs: [{ type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
 ] as const;
 
 const getRpcUrl = (chainId: number): string => {
@@ -198,6 +191,14 @@ const catchRevert = <T>(promise: Promise<T>): Promise<T | null> =>
 //   creation, exactly like handleNewPair bails on null decimals)
 // - totalSupply: 0 when unreadable or when the token is in the chain's
 //   SKIP_TOTAL_SUPPLY list (gas-guzzler tokens)
+// totalSupply is deliberately NOT fetched here — nothing in this indexer or
+// the v2 subgraph derives from Token.totalSupply (all the derived usage is
+// Pair.totalSupply, computed from LP mint/burn in transfer.ts). Keeping this
+// output to {name, symbol, decimals} matches the v3 indexer and lets the
+// shared getTokenMetadata cache be reused.
+//
+// KNOWN PARITY GAP: Token.totalSupply is 0 for every token, not the on-chain
+// value the v2 subgraph reports.
 export const getTokenMetadataEffect = createEffect(
   {
     name: "getTokenMetadata",
@@ -209,7 +210,6 @@ export const getTokenMetadataEffect = createEffect(
       name: S.string,
       symbol: S.string,
       decimals: S.nullable(S.number),
-      totalSupply: S.bigint,
     },
     rateLimit: false,
     cache: true,
@@ -219,8 +219,8 @@ export const getTokenMetadataEffect = createEffect(
     const normalizedAddress = address.toLowerCase();
 
     // Check for token overrides (subgraph STATIC_TOKEN_DEFINITIONS take
-    // priority over contract reads). totalSupply is still read on-chain, but
-    // never blocks metadata resolution.
+    // priority over contract reads). A static definition resolves the token
+    // entirely — no on-chain read is needed.
     const chainConfig = getChainConfig(chainId);
     const staticDefinition = getStaticDefinition(
       normalizedAddress,
@@ -233,23 +233,11 @@ export const getTokenMetadataEffect = createEffect(
       client: getClient(chainId),
     });
 
-    // gas-guzzler tokens whose totalSupply() reads the subgraph skips
-    const skipTotalSupply = isAddressInList(
-      normalizedAddress,
-      chainConfig.skipTotalSupply
-    );
-    const readTotalSupply = (): Promise<bigint | null> =>
-      skipTotalSupply
-        ? Promise.resolve(0n)
-        : catchRevert(contract.read.totalSupply());
-
     if (staticDefinition) {
-      const staticTotalSupply = await withTransportRetry(readTotalSupply);
       return {
         name: staticDefinition.name,
         symbol: staticDefinition.symbol,
         decimals: Number(staticDefinition.decimals),
-        totalSupply: staticTotalSupply ?? 0n,
       };
     }
 
@@ -259,7 +247,6 @@ export const getTokenMetadataEffect = createEffect(
       symbolResult,
       symbolBytes32Result,
       decimalsResult,
-      totalSupplyResult,
     ] = await withTransportRetry(() =>
       Promise.all([
         catchRevert(contract.read.name()),
@@ -267,7 +254,6 @@ export const getTokenMetadataEffect = createEffect(
         catchRevert(contract.read.symbol()),
         catchRevert(contract.read.SYMBOL()),
         catchRevert(contract.read.decimals()),
-        readTotalSupply(),
       ])
     );
 
@@ -301,7 +287,6 @@ export const getTokenMetadataEffect = createEffect(
       name: name || "unknown",
       symbol: symbol || "unknown",
       decimals,
-      totalSupply: totalSupplyResult ?? 0n,
     };
   }
 );
